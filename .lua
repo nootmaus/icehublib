@@ -13,20 +13,25 @@ local UserInputService = MacLib.GetService("UserInputService")
 local Players = MacLib.GetService("Players")
 local CoreGui = MacLib.GetService("CoreGui")
 
---// Theme Palette (Dark Glass & Clean)
+--// Theme Palette (Safe Fonts)
 local THEME = {
-    Background    = Color3.fromRGB(12, 12, 12),     -- Почти черный
-    Surface       = Color3.fromRGB(28, 28, 28),     -- Темно-серый
-    Accent        = Color3.fromRGB(60, 130, 246),   -- Приятный синий
-    Text          = Color3.fromRGB(240, 240, 240),  -- Белый
-    TextMuted     = Color3.fromRGB(160, 160, 160),  -- Серый
-    Stroke        = Color3.fromRGB(255, 255, 255),  -- Обводка
-    CloseRed      = Color3.fromRGB(255, 70, 70),    -- Цвет закрытия
+    Background    = Color3.fromRGB(12, 12, 12),
+    Surface       = Color3.fromRGB(28, 28, 28),
+    Accent        = Color3.fromRGB(60, 130, 246),
+    Text          = Color3.fromRGB(240, 240, 240),
+    TextMuted     = Color3.fromRGB(160, 160, 160),
+    Stroke        = Color3.fromRGB(255, 255, 255),
+    CloseRed      = Color3.fromRGB(255, 70, 70),
     
-    -- Opacity settings
-    BgTrans       = 0.25, -- Полупрозрачный фон
-    SurfTrans     = 0.60, -- Полупрозрачные элементы
-    StrokeTrans   = 0.90, -- Еле заметная обводка
+    -- Opacity
+    BgTrans       = 0.25,
+    SurfTrans     = 0.60,
+    StrokeTrans   = 0.90,
+    
+    -- ИСПРАВЛЕНИЕ: Используем стандартный Gotham для совместимости
+    FontBold      = Enum.Font.GothamBold, 
+    FontSemi      = Enum.Font.Gotham, -- Заменили Medium на обычный Gotham
+    FontNormal    = Enum.Font.Gotham,
 }
 
 local IconList
@@ -34,7 +39,7 @@ local IconList
 --// Helper Functions
 local function GetGui()
     local newGui = Instance.new("ScreenGui")
-    newGui.Name = "IceCleanUI"
+    newGui.Name = "IceCleanUI_Fixed"
     newGui.IgnoreGuiInset = true
     newGui.ResetOnSpawn = false
     newGui.DisplayOrder = 10000
@@ -60,11 +65,6 @@ local function AddStroke(frame, thickness, transp)
     return s
 end
 
-local function SmoothScroll(content, input)
-    -- Простая логика, т.к. ScrollingFrame в Roblox уже имеет сглаживание,
-    -- мы просто настраиваем его внешний вид в коде ниже.
-end
-
 -- Icon Loader
 local function gl(i)
     if not IconList then
@@ -83,7 +83,6 @@ function MacLib:Window(Settings)
     local WindowFunctions = { Settings = Settings }
     local gui = GetGui()
 
-    -- Размеры
     local sizeX = Settings.Size and Settings.Size.X.Offset or 650
     local sizeY = Settings.Size and Settings.Size.Y.Offset or 400
     local fullSize = UDim2.fromOffset(sizeX, sizeY)
@@ -91,15 +90,15 @@ function MacLib:Window(Settings)
     -- Main Container
     local base = Instance.new("Frame", gui)
     base.Name = "Main"
-    base.Size = UDim2.fromOffset(0, 0) -- Start small for anim
+    base.Size = UDim2.fromOffset(0, 0)
     base.Position = UDim2.fromScale(0.5, 0.5)
     base.AnchorPoint = Vector2.new(0.5, 0.5)
     base.BackgroundColor3 = THEME.Background
     base.BackgroundTransparency = THEME.BgTrans
-    base.ClipsDescendants = true -- Важно для анимации
+    base.ClipsDescendants = true
 
     Instance.new("UICorner", base).CornerRadius = UDim.new(0, 16)
-    AddStroke(base, 1.5, 0.7) -- Внешняя обводка
+    AddStroke(base, 1.5, 0.7)
 
     -- Dragging
     local dragging, dragInput, dragStart, startPos
@@ -121,12 +120,9 @@ function MacLib:Window(Settings)
         end
     end)
 
-    --// АНИМАЦИИ ОТКРЫТИЯ/ЗАКРЫТИЯ //--
+    -- Animation Logic
     local isOpen = true
     
-    -- Анимация открытия: Pop Up (Увеличение)
-    base.Size = UDim2.fromOffset(sizeX * 0.9, sizeY * 0.9)
-    base.BackgroundTransparency = 1
     local mainStroke = base:FindFirstChildOfClass("UIStroke")
     if mainStroke then mainStroke.Transparency = 1 end
 
@@ -140,7 +136,6 @@ function MacLib:Window(Settings)
         })
         if mainStroke then Tween(mainStroke, TweenInfo.new(0.4), { Transparency = 0.7 }) end
         
-        -- Показываем контент
         for _, c in pairs(base:GetDescendants()) do
             if c:IsA("TextLabel") or c:IsA("TextButton") or c:IsA("ImageLabel") then
                 if c.Name ~= "Shadow" then
@@ -153,14 +148,12 @@ function MacLib:Window(Settings)
     local function Close()
         if not isOpen then return end
         isOpen = false
-        -- Анимация: Fade Out + Scale Down (Уменьшение на 10%)
         Tween(base, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Size = UDim2.fromOffset(sizeX * 0.95, sizeY * 0.95), -- Немного уменьшаем
+            Size = UDim2.fromOffset(sizeX * 0.95, sizeY * 0.95),
             BackgroundTransparency = 1
         })
         if mainStroke then Tween(mainStroke, TweenInfo.new(0.3), { Transparency = 1 }) end
 
-        -- Скрываем контент быстрее
         for _, c in pairs(base:GetDescendants()) do
             if c:IsA("UIStroke") then Tween(c, TweenInfo.new(0.2), { Transparency = 1 }) end
             if c:IsA("TextLabel") then Tween(c, TweenInfo.new(0.2), { TextTransparency = 1 }) end
@@ -175,20 +168,19 @@ function MacLib:Window(Settings)
     
     WindowFunctions.Toggle = function() if isOpen then Close() else Open() end end
 
-    -- Запуск первой анимации
     isOpen = false 
     Open()
 
-    --// CLOSE BUTTON (Красивая) //--
+    --// CLOSE BUTTON //
     local closeContainer = Instance.new("TextButton", base)
     closeContainer.Name = "CloseBtn"
     closeContainer.Size = UDim2.fromOffset(28, 28)
     closeContainer.Position = UDim2.new(1, -38, 0, 10)
     closeContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    closeContainer.BackgroundTransparency = 0.5 -- Слегка видна
+    closeContainer.BackgroundTransparency = 0.5
     closeContainer.Text = ""
     closeContainer.AutoButtonColor = false
-    Instance.new("UICorner", closeContainer).CornerRadius = UDim.new(1, 0) -- Круг
+    Instance.new("UICorner", closeContainer).CornerRadius = UDim.new(1, 0)
     local closeStroke = AddStroke(closeContainer, 1, 0.8)
 
     local closeIcon = Instance.new("ImageLabel", closeContainer)
@@ -196,7 +188,7 @@ function MacLib:Window(Settings)
     closeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
     closeIcon.Position = UDim2.fromScale(0.5, 0.5)
     closeIcon.BackgroundTransparency = 1
-    closeIcon.Image = "rbxassetid://6031094678" -- Крестик
+    closeIcon.Image = "rbxassetid://6031094678"
     closeIcon.ImageColor3 = THEME.TextMuted
 
     closeContainer.MouseEnter:Connect(function()
@@ -211,15 +203,14 @@ function MacLib:Window(Settings)
     end)
     closeContainer.MouseButton1Click:Connect(Close)
 
-
-    --// Sidebar & Content Layout //--
+    --// Sidebar & Content //
     local sidebarWidth = 170
     
     local sidebar = Instance.new("ScrollingFrame", base)
     sidebar.Size = UDim2.new(0, sidebarWidth, 1, -20)
     sidebar.Position = UDim2.new(0, 10, 0, 10)
     sidebar.BackgroundTransparency = 1
-    sidebar.ScrollBarThickness = 0 -- Скрываем скроллбар тут
+    sidebar.ScrollBarThickness = 0
     
     local contentFrame = Instance.new("Frame", base)
     contentFrame.Size = UDim2.new(1, -(sidebarWidth + 30), 1, -20)
@@ -231,7 +222,6 @@ function MacLib:Window(Settings)
     tabListLayout.Padding = UDim.new(0, 5)
     tabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     
-    -- Title info in sidebar
     local infoFrame = Instance.new("Frame", sidebar)
     infoFrame.Size = UDim2.new(1, 0, 0, 50)
     infoFrame.BackgroundTransparency = 1
@@ -242,7 +232,7 @@ function MacLib:Window(Settings)
     titleLbl.Position = UDim2.new(0, 10, 0, 5)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Text = Settings.Title or "UI"
-    titleLbl.Font = THEME.FontBold
+    titleLbl.Font = THEME.FontBold -- FIXED
     titleLbl.TextSize = 18
     titleLbl.TextColor3 = THEME.Text
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -252,7 +242,7 @@ function MacLib:Window(Settings)
     subLbl.Position = UDim2.new(0, 10, 0, 26)
     subLbl.BackgroundTransparency = 1
     subLbl.Text = Settings.Subtitle or ""
-    subLbl.Font = THEME.FontNormal
+    subLbl.Font = THEME.FontNormal -- FIXED
     subLbl.TextSize = 12
     subLbl.TextColor3 = THEME.TextMuted
     subLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -264,7 +254,6 @@ function MacLib:Window(Settings)
         function Group:Tab(TabSettings)
             local Tab = {}
             
-            -- Tab Button
             local btn = Instance.new("TextButton", sidebar)
             btn.Size = UDim2.new(1, -10, 0, 36)
             btn.BackgroundColor3 = THEME.Surface
@@ -273,7 +262,7 @@ function MacLib:Window(Settings)
             btn.AutoButtonColor = false
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
             
-            local btnStroke = AddStroke(btn, 1, 1) -- invisible initially
+            local btnStroke = AddStroke(btn, 1, 1)
 
             local ico = Instance.new("ImageLabel", btn)
             ico.Size = UDim2.fromOffset(18, 18)
@@ -294,34 +283,30 @@ function MacLib:Window(Settings)
             txt.BackgroundTransparency = 1
             txt.Text = TabSettings.Title or "Tab"
             txt.TextColor3 = THEME.TextMuted
-            txt.Font = THEME.FontSemi
+            txt.Font = THEME.FontSemi -- FIXED
             txt.TextSize = 13
             txt.TextXAlignment = Enum.TextXAlignment.Left
             
-            -- Tab Content Scroll
             local page = Instance.new("ScrollingFrame", contentFrame)
             page.Size = UDim2.new(1, 0, 1, 0)
             page.BackgroundTransparency = 1
             page.Visible = false
             page.CanvasSize = UDim2.new(0,0,0,0)
             page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-            
-            -- // КРАСИВЫЙ СКРОЛЛБАР //
-            page.ScrollBarThickness = 2 -- Очень тонкий
+            page.ScrollBarThickness = 2
             page.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
-            page.ScrollBarImageTransparency = 0.8 -- Еле виден, пока не наведешь
+            page.ScrollBarImageTransparency = 0.8
             page.BorderSizePixel = 0
             
             local pageLayout = Instance.new("UIListLayout", page)
             pageLayout.Padding = UDim.new(0, 8)
             pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
             
-            Instance.new("UIPadding", page).PaddingRight = UDim.new(0, 8) -- Отступ от скролла
+            Instance.new("UIPadding", page).PaddingRight = UDim.new(0, 8)
 
             local function Activate()
                 if currentTabBtn == btn then return end
                 
-                -- Deactivate old
                 for _, child in pairs(sidebar:GetChildren()) do
                     if child:IsA("TextButton") then
                         Tween(child, TweenInfo.new(0.2), { BackgroundTransparency = 1 })
@@ -342,13 +327,11 @@ function MacLib:Window(Settings)
                 page.Visible = true
                 page.CanvasPosition = Vector2.new(0,0)
 
-                -- Activate new
                 Tween(btn, TweenInfo.new(0.2), { BackgroundTransparency = 0.85, BackgroundColor3 = THEME.Accent })
-                Tween(btnStroke, TweenInfo.new(0.2), { Transparency = 1 }) -- No stroke on active, just fill? Or slight stroke.
+                Tween(btnStroke, TweenInfo.new(0.2), { Transparency = 1 })
                 Tween(txt, TweenInfo.new(0.2), { TextColor3 = THEME.Text })
                 Tween(ico, TweenInfo.new(0.2), { ImageColor3 = THEME.Accent })
                 
-                -- Fade in content
                 page.Position = UDim2.new(0, 0, 0, 10)
                 page.BackgroundTransparency = 1
                 Tween(page, TweenInfo.new(0.25, Enum.EasingStyle.Quad), { Position = UDim2.new(0,0,0,0) })
@@ -357,7 +340,6 @@ function MacLib:Window(Settings)
             btn.MouseButton1Click:Connect(Activate)
             if currentTabBtn == nil then Activate() end
             
-            --// SECTIONS & ELEMENTS //--
             function Tab:Section(Title)
                 local section = {}
                 
@@ -371,11 +353,10 @@ function MacLib:Window(Settings)
                     l.Position = UDim2.new(0, 2, 0, 0)
                     l.BackgroundTransparency = 1
                     l.Text = Title
-                    l.Font = THEME.FontBold
+                    l.Font = THEME.FontBold -- FIXED
                     l.TextColor3 = THEME.Text
                     l.TextSize = 14
                     l.TextXAlignment = Enum.TextXAlignment.Left
-                    
                     Instance.new("UIPadding", page).PaddingTop = UDim.new(0, 5)
                 end
                 
@@ -396,7 +377,7 @@ function MacLib:Window(Settings)
                     b.BackgroundTransparency = 1
                     b.Text = BData.Title or "Button"
                     b.TextColor3 = THEME.Text
-                    b.Font = THEME.FontSemi
+                    b.Font = THEME.FontSemi -- FIXED
                     b.TextSize = 13
                     
                     b.MouseButton1Click:Connect(function()
@@ -416,7 +397,7 @@ function MacLib:Window(Settings)
                     lab.BackgroundTransparency = 1
                     lab.Text = TData.Title or "Toggle"
                     lab.TextColor3 = THEME.Text
-                    lab.Font = THEME.FontSemi
+                    lab.Font = THEME.FontSemi -- FIXED
                     lab.TextSize = 13
                     lab.TextXAlignment = Enum.TextXAlignment.Left
                     
@@ -461,7 +442,7 @@ function MacLib:Window(Settings)
                     title.BackgroundTransparency = 1
                     title.Text = SData.Title or "Slider"
                     title.TextColor3 = THEME.Text
-                    title.Font = THEME.FontSemi
+                    title.Font = THEME.FontSemi -- FIXED
                     title.TextSize = 13
                     title.TextXAlignment = Enum.TextXAlignment.Left
                     
@@ -471,7 +452,7 @@ function MacLib:Window(Settings)
                     valLab.BackgroundTransparency = 1
                     valLab.Text = tostring(SData.Default or 0)
                     valLab.TextColor3 = THEME.Accent
-                    valLab.Font = THEME.FontBold
+                    valLab.Font = THEME.FontBold -- FIXED
                     valLab.TextSize = 12
                     valLab.TextXAlignment = Enum.TextXAlignment.Right
                     
@@ -525,10 +506,8 @@ function MacLib:Window(Settings)
         return Group
     end
     
-    -- Notify
     function WindowFunctions:Notify(Data)
-        local n = Instance.new("Frame", gui) -- Можно в отдельный контейнер
-        -- Простой notify для примера, чтобы не загромождать код
+        -- Можно добавить
     end
     
     return WindowFunctions
