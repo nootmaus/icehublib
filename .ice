@@ -14,8 +14,8 @@ function Library:CreateWindow(Name)
     Main.Name = "Main"
     Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     Main.BorderSizePixel = 0
-    Main.Position = UDim2.new(0.5, -200, 0.4, 0)
-    Main.Size = UDim2.new(0, 400, 0, 350)
+    Main.Position = UDim2.new(0.5, -225, 0.4, 0)
+    Main.Size = UDim2.new(0, 450, 0, 400)
     Main.Active = true
     Main.Draggable = true
 
@@ -43,18 +43,17 @@ function Library:CreateWindow(Name)
     TabContainer.Position = UDim2.new(0, 0, 0, 30)
     TabContainer.Size = UDim2.new(1, 0, 1, -30)
 
-    local Tabs = {}
-    local FirstTab = true
-
     local TabButtons = Instance.new("Frame", TopBar)
     TabButtons.BackgroundTransparency = 1
-    TabButtons.Position = UDim2.new(0.5, 0, 0, 0)
-    TabButtons.Size = UDim2.new(0.5, -5, 1, 0)
+    TabButtons.Position = UDim2.new(0.4, 0, 0, 0)
+    TabButtons.Size = UDim2.new(0.6, -5, 1, 0)
     
     local TabList = Instance.new("UIListLayout", TabButtons)
     TabList.FillDirection = Enum.FillDirection.Horizontal
     TabList.HorizontalAlignment = Enum.HorizontalAlignment.Right
     TabList.Padding = UDim.new(0, 5)
+
+    local FirstTab = true
 
     function Library:CreateTab(TabName)
         local TabScroll = Instance.new("ScrollingFrame", TabContainer)
@@ -102,6 +101,7 @@ function Library:CreateWindow(Name)
             Lab.Text = Text
             Lab.TextColor3 = Color3.fromRGB(200, 200, 200)
             Lab.TextSize = 12
+            return Lab
         end
 
         function Elements:Button(Text, Callback)
@@ -113,6 +113,7 @@ function Library:CreateWindow(Name)
             Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             Btn.TextSize = 12
             Btn.MouseButton1Click:Connect(Callback)
+            return Btn
         end
 
         function Elements:Toggle(Text, Default, Callback)
@@ -142,6 +143,7 @@ function Library:CreateWindow(Name)
                 Btn.BackgroundColor3 = Toggled and Color3.fromRGB(50, 200, 100) or Color3.fromRGB(60, 60, 60)
                 pcall(Callback, Toggled)
             end)
+            return Btn
         end
 
         function Elements:Input(Text, Default, Callback)
@@ -171,6 +173,7 @@ function Library:CreateWindow(Name)
             Box.FocusLost:Connect(function()
                 pcall(Callback, Box.Text)
             end)
+            return Box
         end
 
         function Elements:Bind(Text, Default, Callback)
@@ -212,6 +215,7 @@ function Library:CreateWindow(Name)
                     pcall(Callback, input.KeyCode)
                 end
             end)
+            return Btn
         end
 
         return Elements
