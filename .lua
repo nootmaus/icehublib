@@ -1,6 +1,6 @@
 local MacLib = {
     Options = {},
-    Folder = "IceLib", -- Переименовал папку
+    Folder = "AquaPurpleLib", 
     GetService = function(service)
         return cloneref and cloneref(game:GetService(service)) or game:GetService(service)
     end
@@ -17,20 +17,20 @@ local CoreGui = MacLib.GetService("CoreGui")
 --// Variables
 local LocalPlayer = Players.LocalPlayer
 
---// Ice Theme Palette (White/Monochrome)
+--// Aqua + Purple Theme Palette
 local THEME = {
-    Background    = Color3.fromRGB(16, 20, 24),       -- Немного темнее для контраста с белым
-    CardGrad1     = Color3.fromRGB(20, 25, 30),
-    CardGrad2     = Color3.fromRGB(35, 40, 45),
-    CardGrad3     = Color3.fromRGB(80, 80, 80),       -- Градиент теперь серый, а не синий
-    StrokeGlow    = Color3.fromRGB(255, 255, 255),    -- Свечение белое
-    StrokeMain    = Color3.fromRGB(200, 200, 200),    -- Обводка светло-серая/белая
-    Surface       = Color3.fromRGB(30, 35, 40),
-    SurfaceDark   = Color3.fromRGB(25, 28, 32),
-    Accent        = Color3.fromRGB(255, 255, 255),    -- Акцент полностью белый
-    Text          = Color3.fromRGB(241, 245, 249),
-    TextMuted     = Color3.fromRGB(148, 163, 184),
-    Error         = Color3.fromRGB(239, 68, 68),
+    Background    = Color3.fromRGB(12, 10, 18),       -- Глубокий темно-фиолетовый фон
+    CardGrad1     = Color3.fromRGB(20, 15, 30),       -- Начало градиента (темно-фиолетовый)
+    CardGrad2     = Color3.fromRGB(45, 25, 60),       -- Середина (фиолетовый)
+    CardGrad3     = Color3.fromRGB(0, 150, 180),      -- Конец (темная Aqua)
+    StrokeGlow    = Color3.fromRGB(0, 255, 230),      -- Свечение ярко-Aqua
+    StrokeMain    = Color3.fromRGB(80, 60, 120),      -- Обводка фиолетовая
+    Surface       = Color3.fromRGB(25, 22, 35),       -- Поверхности (кнопки, секции)
+    SurfaceDark   = Color3.fromRGB(18, 15, 26),       -- Темные поверхности (топбар)
+    Accent        = Color3.fromRGB(0, 255, 230),      -- Основной акцент (Aqua)
+    Text          = Color3.fromRGB(240, 240, 255),    -- Текст почти белый с оттенком
+    TextMuted     = Color3.fromRGB(140, 130, 180),    -- Приглушенный текст (лаванда)
+    Error         = Color3.fromRGB(255, 60, 90),
     FontBold      = Enum.Font.GothamBold,
     FontSemi      = Enum.Font.GothamMedium,
     FontNormal    = Enum.Font.Gotham,
@@ -49,7 +49,7 @@ end
 --// Helper Functions
 local function GetGui()
     local newGui = Instance.new("ScreenGui")
-    newGui.Name = "IceLibUI" -- Переименовал GUI
+    newGui.Name = "AquaPurpleUI"
     newGui.ScreenInsets = Enum.ScreenInsets.None
     newGui.ResetOnSpawn = false
     newGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -88,8 +88,8 @@ local function AddCardStyle(frame, cornerRadius)
     })
 
     local strokeGlow = Instance.new("UIStroke", frame)
-    strokeGlow.Thickness = 3
-    strokeGlow.Transparency = 0.85 -- Чуть прозрачнее, так как белый очень яркий
+    strokeGlow.Thickness = 2 -- Чуть тоньше для неона
+    strokeGlow.Transparency = 0.6
     strokeGlow.Color = THEME.StrokeGlow
     strokeGlow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
@@ -317,17 +317,17 @@ function MacLib:Window(Settings)
     titleLbl.Position = UDim2.new(0, 16, 0, 0)
     titleLbl.Size = UDim2.new(1, -80, 1, 0)
     titleLbl.Font = THEME.FontBold
-    titleLbl.Text = Settings.Title or "Ice Interface"
+    titleLbl.Text = Settings.Title or "Aqua Interface"
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
     titleLbl.TextSize = 18
     titleLbl.TextColor3 = THEME.Text
 
     local titleGrad = Instance.new("UIGradient", titleLbl)
-    -- Изменил градиент на бело-серый
+    -- Градиент заголовка: Aqua -> Фиолетовый
     titleGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(200, 200, 200)),
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(150, 150, 150)),
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 255, 230)),   -- Aqua
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(160, 120, 255)), -- Light Purple
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(130, 80, 250)),  -- Deep Purple
     })
 
     -- Close Button
@@ -579,11 +579,11 @@ function MacLib:Window(Settings)
                     headerLbl.TextXAlignment = Enum.TextXAlignment.Left
 
                     local secGrad = Instance.new("UIGradient", headerLbl)
-                    -- Градиент заголовка секции: Белый -> Серый
+                    -- Градиент секции: Aqua -> Фиолетовый
                     secGrad.Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
-                        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(220, 220, 220)),
-                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(180, 180, 180)),
+                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 255, 230)),
+                        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(180, 130, 255)),
+                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(140, 80, 255)),
                     })
 
                     arrow = Instance.new("TextLabel", headerBtn)
@@ -634,7 +634,7 @@ function MacLib:Window(Settings)
                 local function MakeElement(height)
                     local el = Instance.new("Frame", contentHolder)
                     el.Size = UDim2.new(1, 0, 0, height or 38)
-                    el.BackgroundColor3 = Color3.fromRGB(25, 25, 30) -- Темнее фон элемента
+                    el.BackgroundColor3 = Color3.fromRGB(25, 22, 35) -- Темно-фиолетовый фон элемента
                     el.BackgroundTransparency = 0.5
 
                     local elCorn = Instance.new("UICorner", el)
@@ -694,7 +694,6 @@ function MacLib:Window(Settings)
                         end
                         pressT = nil
                 
-                        -- Callback nhận hold + hadPress
                         if BSettings.Callback then
                             BSettings.Callback(hold, hadPress)
                         end
@@ -710,9 +709,7 @@ function MacLib:Window(Settings)
                     return Funcs
                 end
 
-
-
-                -- [TOGGLE] – có State cho script cũ
+                -- [TOGGLE]
                 function SecFuncs:Toggle(TSettings, Flag)
                     local togCont = MakeElement(38)
                     AddTitle(togCont, TSettings.Title or TSettings.Name)
@@ -722,7 +719,6 @@ function MacLib:Window(Settings)
                     togBtn.BackgroundTransparency = 1
                     togBtn.Text = ""
                 
-                    -- fallback: nếu GLOBAL_FADE nil thì dùng 0.1
                     local FADE = (type(GLOBAL_FADE) == "number") and GLOBAL_FADE or 0.1
                 
                     local switchBg = Instance.new("Frame", togCont)
@@ -747,10 +743,10 @@ function MacLib:Window(Settings)
                                 BackgroundColor3 = THEME.Accent,
                                 BackgroundTransparency = 0
                             })
-                            -- Чтобы белый кноб был виден на белом фоне (Accent), сделаем кноб темным при включении
+                            -- Кноб становится темным на ярком Aqua фоне
                             Tween(knob, TweenInfo.new(0.2), { 
                                 Position = UDim2.new(1, -18, 0.5, -8),
-                                BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Темный цвет кноба при включении
+                                BackgroundColor3 = Color3.fromRGB(20, 15, 30) 
                             })
                         else
                             Tween(switchBg, TweenInfo.new(0.2), {
@@ -759,12 +755,11 @@ function MacLib:Window(Settings)
                             })
                             Tween(knob, TweenInfo.new(0.2), { 
                                 Position = UDim2.new(0, 2, 0.5, -8),
-                                BackgroundColor3 = THEME.Text -- Белый цвет кноба при выключении
+                                BackgroundColor3 = THEME.Text
                             })
                         end
                     end
                 
-                    -- không gọi callback khi set Default
                     applyVisual(toggled)
                 
                     local function setState(state, fireCallback)
@@ -790,7 +785,6 @@ function MacLib:Window(Settings)
                     if Flag then MacLib.Options[Flag] = Funcs end
                     return Funcs
                 end
-
 
                 -- [SLIDER]
                 function SecFuncs:Slider(SSettings, Flag)
@@ -939,7 +933,7 @@ function MacLib:Window(Settings)
                         for _, opt in ipairs(opts) do
                             local optBtn = Instance.new("TextButton", listFrame)
                             optBtn.Size = UDim2.new(1, 0, 0, 26)
-                            optBtn.BackgroundColor3 = Color3.fromRGB(15, 20, 30)
+                            optBtn.BackgroundColor3 = Color3.fromRGB(20, 18, 30) -- Темно-фиолетовый фон опции
                             optBtn.Text = opt
                             optBtn.Font = THEME.FontNormal
                             optBtn.TextColor3 = THEME.Text
@@ -998,237 +992,59 @@ function MacLib:Window(Settings)
                         DSettings.Options = list
                         RefreshList()
                     end
-
+                    
                     if Flag then MacLib.Options[Flag] = Funcs end
                     return Funcs
                 end
 
-                -- [INPUT] – chữ đậm, font đẹp hơn
+                -- [INPUT]
                 function SecFuncs:Input(ISettings, Flag)
-                    local inpCont = MakeElement(38)
-                    AddTitle(inpCont, ISettings.Title or ISettings.Name)
+                    local inpCont = MakeElement(42)
+                    local title = AddTitle(inpCont, ISettings.Title or ISettings.Name)
+                    title.Size = UDim2.new(1, -140, 1, 0)
 
-                    local boxBg = Instance.new("Frame", inpCont)
-                    boxBg.Size = UDim2.new(0, 60, 0, 26)
-                    boxBg.Position = UDim2.new(1, -70, 0.5, -13)
-                    boxBg.BackgroundColor3 = THEME.Background
-                    Instance.new("UICorner", boxBg).CornerRadius = UDim.new(0, 6)
-                    local bStr = Instance.new("UIStroke", boxBg)
-                    bStr.Color = THEME.StrokeMain
-                    bStr.Transparency = 0.8
+                    local tBoxBg = Instance.new("Frame", inpCont)
+                    tBoxBg.Size = UDim2.new(0, 120, 0, 24)
+                    tBoxBg.Position = UDim2.new(1, -130, 0.5, -12)
+                    tBoxBg.BackgroundColor3 = THEME.SurfaceDark
+                    Instance.new("UICorner", tBoxBg).CornerRadius = UDim.new(0, 6)
 
-                    local box = Instance.new("TextBox", boxBg)
-                    box.Size = UDim2.new(1, -10, 1, 0)
-                    box.Position = UDim2.new(0, 5, 0, 0)
-                    box.BackgroundTransparency = 1
-                    box.Text = ISettings.Default or ""
-                    box.PlaceholderText = ISettings.Placeholder or "..."
-                    box.TextColor3 = THEME.Text
-                    box.Font = THEME.FontBold       -- Đậm, rõ
-                    box.TextSize = 14               -- To hơn 1 chút
-                    box.TextStrokeTransparency = 0.8
-                    box.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                    local tBox = Instance.new("TextBox", tBoxBg)
+                    tBox.Size = UDim2.new(1, -10, 1, 0)
+                    tBox.Position = UDim2.new(0, 5, 0, 0)
+                    tBox.BackgroundTransparency = 1
+                    tBox.Text = ISettings.Default or ""
+                    tBox.PlaceholderText = ISettings.Placeholder or "..."
+                    tBox.TextColor3 = THEME.Text
+                    tBox.PlaceholderColor3 = THEME.TextMuted
+                    tBox.Font = THEME.FontSemi
+                    tBox.TextSize = 13
+                    tBox.TextXAlignment = Enum.TextXAlignment.Left
 
-                    local Funcs = { Class = "Input", Value = box.Text }
+                    local Funcs = { Class = "Input", Value = tBox.Text }
 
-                    box.FocusLost:Connect(function()
-                        Funcs.Value = box.Text
-                        if ISettings.Callback then ISettings.Callback(box.Text) end
+                    tBox.FocusLost:Connect(function(enter)
+                        Funcs.Value = tBox.Text
+                        if ISettings.Callback then ISettings.Callback(tBox.Text, enter) end
                     end)
 
-                    function Funcs:Set(t)
-                        box.Text = t
-                        Funcs.Value = t
+                    function Funcs:Set(v)
+                        tBox.Text = v
+                        Funcs.Value = v
                     end
+                    
                     if Flag then MacLib.Options[Flag] = Funcs end
                     return Funcs
-                end
-
-                -- [LABEL]
-                function SecFuncs:Label(Settings)
-                    local lbl = MakeElement(24)
-                    lbl.BackgroundTransparency = 1
-                    local stroke = lbl:FindFirstChildOfClass("UIStroke")
-                    if stroke then stroke:Destroy() end
-                    local title = AddTitle(lbl, Settings.Title or Settings.Name)
-                    title.Font = THEME.FontNormal
-                end
-
-                -- [PARAGRAPH]
-                function SecFuncs:Paragraph(Settings)
-                    local par = MakeElement(44)
-                    par.BackgroundTransparency = 0.25
-                    local stroke = par:FindFirstChildOfClass("UIStroke")
-                    if stroke then
-                        stroke.Transparency = 0.5
-                        stroke.Thickness = 1
-                    end
-
-                    local title = AddTitle(par, Settings.Title or Settings.Header)
-                    title.Font = THEME.FontBold
-                    title.TextSize = 14
-
-                    local desc = Instance.new("TextLabel", par)
-                    desc.Size = UDim2.new(1, -20, 1, -22)
-                    desc.Position = UDim2.new(0, 10, 0, 20)
-                    desc.BackgroundTransparency = 1
-                    desc.Text = Settings.Desc or Settings.Body or ""
-                    desc.TextColor3 = THEME.Text
-                    desc.TextSize = 13
-                    desc.TextWrapped = true
-                    desc.TextXAlignment = Enum.TextXAlignment.Left
-                    desc.TextYAlignment = Enum.TextYAlignment.Top
-                    desc.Font = THEME.FontSemi
-                end
-
-                -- [DIVIDER]
-                function SecFuncs:Divider()
-                    local div = Instance.new("Frame", contentHolder)
-                    div.Size = UDim2.new(1, 0, 0, 1)
-                    div.BackgroundColor3 = THEME.StrokeMain
-                    div.BackgroundTransparency = 0.8
-                    div.BorderSizePixel = 0
                 end
 
                 return SecFuncs
             end
-
             return TabFuncs
         end
-
         return GroupFuncs
     end
 
-    -- Notification API
-    function WindowFunctions:Notify(NSettings)
-        local notif = Instance.new("Frame")
-        notif.Size = UDim2.new(1, 0, 0, 70)
-        notif.BackgroundTransparency = 1
-        notif.Parent = notifications
-
-        local card = Instance.new("Frame", notif)
-        card.Size = UDim2.new(1, 0, 1, 0)
-        card.Position = UDim2.new(1, 40, 0, 0)
-        card.BackgroundTransparency = 1
-
-        AddCardStyle(card, 12)
-
-        local title = Instance.new("TextLabel", card)
-        title.Position = UDim2.new(0, 12, 0, 8)
-        title.Size = UDim2.new(1, -24, 0, 20)
-        title.BackgroundTransparency = 1
-        title.Font = THEME.FontBold
-        title.Text = NSettings.Title or "Notification"
-        title.TextColor3 = THEME.Accent
-        title.TextSize = 14
-        title.TextXAlignment = Enum.TextXAlignment.Left
-
-        local desc = Instance.new("TextLabel", card)
-        desc.Position = UDim2.new(0, 12, 0, 30)
-        desc.Size = UDim2.new(1, -24, 0, 32)
-        desc.BackgroundTransparency = 1
-        desc.Font = THEME.FontNormal
-        desc.Text = NSettings.Desc or "Description"
-        desc.TextColor3 = THEME.Text
-        desc.TextSize = 13
-        desc.TextWrapped = true
-        desc.TextXAlignment = Enum.TextXAlignment.Left
-        desc.TextYAlignment = Enum.TextYAlignment.Top
-
-        Tween(card, TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            Position = UDim2.new(0, 0, 0, 0),
-            BackgroundTransparency = 0
-        })
-
-        task.delay(NSettings.Duration or 3, function()
-            Tween(card, TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-                Position = UDim2.new(1, 40, 0, 0),
-                BackgroundTransparency = 1
-            })
-            task.wait(0.36)
-            notif:Destroy()
-        end)
-    end
-
-    function WindowFunctions:Unload()
-        if WindowFunctions.onUnloadCallback then WindowFunctions.onUnloadCallback() end
-        macLib:Destroy()
-    end
-
-    function WindowFunctions.onUnloaded(callback)
-        WindowFunctions.onUnloadCallback = callback
-    end
-
     return WindowFunctions
-end
-
---// Config System
-function MacLib:SetFolder(Folder)
-    MacLib.Folder = Folder
-    if not isfolder(MacLib.Folder) then makefolder(MacLib.Folder) end
-    if not isfolder(MacLib.Folder .. "/settings") then makefolder(MacLib.Folder .. "/settings") end
-end
-
-function MacLib:SaveConfig(Name)
-    if not Name then return false, "No name" end
-    local data = {}
-    for flag, option in pairs(MacLib.Options) do
-        if ClassParser[option.Class] then
-            table.insert(data, ClassParser[option.Class].Save(flag, option))
-        end
-    end
-    writefile(MacLib.Folder .. "/settings/" .. Name .. ".json", HttpService:JSONEncode(data))
-    return true
-end
-
-function MacLib:LoadConfig(Name)
-    if not isfile(MacLib.Folder .. "/settings/" .. Name .. ".json") then
-        return false, "No file"
-    end
-    local data = HttpService:JSONDecode(readfile(MacLib.Folder .. "/settings/" .. Name .. ".json"))
-    for _, option in pairs(data) do
-        if ClassParser[option.type] then
-            ClassParser[option.type].Load(option.flag, option)
-        end
-    end
-    return true
-end
-
-function MacLib:RefreshConfigList()
-    local list = listfiles(MacLib.Folder .. "/settings")
-    local out = {}
-    for _, file in pairs(list) do
-        if file:sub(-5) == ".json" then
-            local pos = file:find(".json", 1, true)
-            local start = pos
-            local char = file:sub(pos, pos)
-            while char ~= "/" and char ~= "\\" and char ~= "" do
-                pos = pos - 1
-                char = file:sub(pos, pos)
-            end
-            if char == "/" or char == "\\" then
-                table.insert(out, file:sub(pos + 1, start - 1))
-            end
-        end
-    end
-    return out
-end
-
---// Demo
-function MacLib:Demo()
-    local Window = MacLib:Window({ Title = "Ice Interface", Size = UDim2.fromOffset(650, 400) })
-    local Group = Window:TabGroup()
-    local Tab = Group:Tab({ Title = "Main", Image = "rbxassetid://10709791437" })
-    local Section = Tab:Section({ Title = "Features" })
-
-    Section:Toggle({ Title = "Auto Farm", Default = false, Callback = function(v) print("Farm:", v) end }, "AutoFarm")
-    Section:Slider({ Title = "WalkSpeed", Default = 16, Minimum = 16, Maximum = 100, Callback = function(v) print("Speed:", v) end }, "WalkSpeed")
-    Section:Dropdown({ Title = "Target Mode", Options = { "Nearest", "Random" }, Default = "Nearest", Callback = function(v) print("Mode:", v) end }, "TargetMode")
-    Section:Input({ Title = "Webhook URL", Default = "", Callback = function(v) print("Webhook:", v) end }, "Webhook")
-    Section:Paragraph({ Title = "Info", Desc = "This is a sample paragraph with Ice Finder styling." })
-    Section:Button({ Title = "Server Hop", Callback = function() Window:Notify({ Title = "System", Desc = "Hopping..." }) end })
-
-    MacLib:SetFolder("IceLib")
 end
 
 return MacLib
