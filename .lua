@@ -1,34 +1,73 @@
 local Library = {}
 
--- [ SERVICES ]
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
--- [ THEME & REGISTRY ]
-local Registry = {} -- {Object = obj, Property = prop, ThemeType = "Type", CustomUpdate = func}
+local Registry = {}
+local TogglesToSave = {} 
 
 local Theme = {
     Bg = Color3.fromRGB(12, 12, 18),
     Sidebar = Color3.fromRGB(18, 18, 24),
-    
     TabInactive = Color3.fromRGB(20, 20, 28),
     TabHover = Color3.fromRGB(35, 35, 45),
     TabActive = Color3.fromRGB(40, 45, 60),
-    
     Element = Color3.fromRGB(22, 22, 28),
-    
-    Accent = Color3.fromRGB(255, 60, 60), -- Поставил красный по умолчанию, как на скрине
-    SecondaryAccent = Color3.fromRGB(180, 0, 0), -- Темно-красный
+    Accent = Color3.fromRGB(255, 60, 60),
+    SecondaryAccent = Color3.fromRGB(180, 0, 0),
     White = Color3.fromRGB(255, 255, 255),
-    
     Text = Color3.fromRGB(255, 255, 255),
     TextDim = Color3.fromRGB(160, 170, 180)
 }
 
--- [ HELPER FUNCTIONS ]
+local ConfigName = "NamelessHub_Config.json"
+local CurrentScale = 1.0
+
+local function SaveSettings()
+    if not writefile then return end
+    
+    local data = {
+        Theme = {
+            Main = {R = Theme.Accent.R, G = Theme.Accent.G, B = Theme.Accent.B},
+            Sec = {R = Theme.SecondaryAccent.R, G = Theme.SecondaryAccent.G, B = Theme.SecondaryAccent.B}
+        },
+        Scale = CurrentScale,
+        Binds = {}
+    }
+
+    for name, bind in pairs(TogglesToSave) do
+        data.Binds[name] = bind
+    end
+
+    writefile(ConfigName, HttpService:JSONEncode(data))
+end
+
+local function LoadSettings()
+    if not isfile or not isfile(ConfigName) then return end
+    
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(readfile(ConfigName))
+    end)
+
+    if success and result then
+        if result.Theme then
+            Theme.Accent = Color3.new(result.Theme.Main.R, result.Theme.Main.G, result.Theme.Main.B)
+            Theme.SecondaryAccent = Color3.new(result.Theme.Sec.R, result.Theme.Sec.G, result.Theme.Sec.B)
+        end
+        if result.Scale then
+            CurrentScale = result.Scale
+        end
+        if result.Binds then
+            TogglesToSave = result.Binds
+        end
+    end
+end
+
+LoadSettings()
 
 local function RegisterObject(obj, prop, themeType)
     table.insert(Registry, {Object = obj, Property = prop, ThemeType = themeType})
@@ -58,12 +97,13 @@ local function UpdateTheme()
             end
             
             if color then
-                TweenService:Create(data.Object, TweenInfo.new(0.5), {[data.Property] = color}):Play()
+                TweenService:Create(data.Object, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {[data.Property] = color}):Play()
             end
             
             if data.CustomUpdate then data.CustomUpdate() end
         end
     end
+    SaveSettings()
 end
 
 local function CreateAnimatedGradient(parent, isTitle)
@@ -106,11 +146,10 @@ local function MakeDraggable(obj)
     obj.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
     UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then
         local delta = input.Position - dragStart
-        TweenService:Create(obj, TweenInfo.new(0.05), {Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)}):Play()
+        TweenService:Create(obj, TweenInfo.new(0.08, Enum.EasingStyle.Sine), {Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)}):Play()
     end end)
 end
 
--- [ LIBRARY MAIN ]
 function Library:CreateWindow(titleText)
     if CoreGui:FindFirstChild("NamelessHubCompact") then CoreGui.NamelessHubCompact:Destroy() end
 
@@ -119,7 +158,6 @@ function Library:CreateWindow(titleText)
     ScreenGui.Parent = CoreGui
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Main Frame
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
     Main.Size = UDim2.new(0, 0, 0, 0) 
@@ -130,10 +168,9 @@ function Library:CreateWindow(titleText)
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
     
     local MainScale = Instance.new("UIScale", Main)
-    MainScale.Scale = 1
+    MainScale.Scale = CurrentScale
     
-    -- Opening Animation
-    TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 320)}):Play()
+    TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 320)}):Play()
     
     local MainStroke = Instance.new("UIStroke", Main)
     MainStroke.Thickness = 3
@@ -143,7 +180,6 @@ function Library:CreateWindow(titleText)
     
     MakeDraggable(Main)
 
-    -- Header
     local Header = Instance.new("Frame", Main)
     Header.Size = UDim2.new(1, 0, 0, 45)
     Header.BackgroundTransparency = 1
@@ -162,7 +198,6 @@ function Library:CreateWindow(titleText)
     BtnContainer.Position = UDim2.new(1, -65, 0, 0)
     BtnContainer.BackgroundTransparency = 1
 
-    -- Close Button
     local CloseBtn = Instance.new("TextButton", BtnContainer)
     CloseBtn.Name = "Close"
     CloseBtn.Text = ""
@@ -186,12 +221,11 @@ function Library:CreateWindow(titleText)
     RegisterObject(CloseStroke, "Color", "Accent")
     
     CloseBtn.MouseButton1Click:Connect(function() 
-        TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)}):Play()
-        task.wait(0.3)
+        TweenService:Create(Main, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)}):Play()
+        task.wait(0.4)
         ScreenGui:Destroy() 
     end)
 
-    -- Settings Button (S)
     local SettingsBtn = Instance.new("TextButton", BtnContainer)
     SettingsBtn.Name = "Settings"
     SettingsBtn.Text = "S"
@@ -206,7 +240,6 @@ function Library:CreateWindow(titleText)
     local SettingsStroke = Instance.new("UIStroke", SettingsBtn)
     SettingsStroke.Color = Theme.TextDim; SettingsStroke.Thickness = 1.2; SettingsStroke.Transparency = 0.8
 
-    -- Horizontal Glow Line (Under Header)
     local Line = Instance.new("Frame", Main)
     Line.Size = UDim2.new(1, -30, 0, 2)
     Line.Position = UDim2.new(0, 15, 0, 45)
@@ -216,7 +249,6 @@ function Library:CreateWindow(titleText)
     LineGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Theme.Bg), ColorSequenceKeypoint.new(0.5, Theme.Accent), ColorSequenceKeypoint.new(1, Theme.Bg)}
     table.insert(Registry, {Object = LineGrad, ThemeType = "Gradient"})
 
-    -- Sidebar Container
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Size = UDim2.new(0, 110, 1, -55)
     Sidebar.Position = UDim2.new(0, 10, 0, 50)
@@ -226,25 +258,22 @@ function Library:CreateWindow(titleText)
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     local SidebarPad = Instance.new("UIPadding", Sidebar); SidebarPad.PaddingTop = UDim.new(0, 5)
 
-    -- [[ VERTICAL DIVIDER LINE ]] --
     local VLine = Instance.new("Frame", Main)
     VLine.Name = "VerticalLine"
-    VLine.Size = UDim2.new(0, 2, 1, -70) -- Высота линии
-    VLine.Position = UDim2.new(0, 125, 0, 55) -- Позиция справа от табов
+    VLine.Size = UDim2.new(0, 2, 1, -70)
+    VLine.Position = UDim2.new(0, 125, 0, 55)
     VLine.BackgroundColor3 = Theme.White
     VLine.BorderSizePixel = 0
     VLine.ZIndex = 2
     
     local VLineGrad = CreateAnimatedGradient(VLine, false)
-    VLineGrad.Rotation = 90 -- Вертикальный градиент
-    -- [[ END VERTICAL DIVIDER ]] --
+    VLineGrad.Rotation = 90
 
     local Content = Instance.new("Frame", Main)
     Content.Size = UDim2.new(1, -145, 1, -55)
     Content.Position = UDim2.new(0, 135, 0, 50)
     Content.BackgroundTransparency = 1
 
-    -- [ SETTINGS OVERLAY ]
     local SettingsFrame = Instance.new("Frame", Main)
     SettingsFrame.Name = "SettingsOverlay"
     SettingsFrame.Size = UDim2.new(1, -20, 1, -60)
@@ -257,10 +286,9 @@ function Library:CreateWindow(titleText)
     local Blur = Instance.new("Frame", SettingsFrame)
     Blur.Size = UDim2.new(1,0,1,0)
     Blur.BackgroundColor3 = Theme.Bg
-    Blur.BackgroundTransparency = 0.1
+    Blur.BackgroundTransparency = 0.05
     Instance.new("UICorner", Blur).CornerRadius = UDim.new(0, 8)
     
-    -- Scale Settings
     local ScaleSection = Instance.new("Frame", SettingsFrame)
     ScaleSection.Size = UDim2.new(1, 0, 0, 60)
     ScaleSection.Position = UDim2.new(0, 0, 0, 0)
@@ -284,7 +312,7 @@ function Library:CreateWindow(titleText)
     local ScaleDisp = Instance.new("TextLabel", ScaleControl)
     ScaleDisp.Size = UDim2.new(1, 0, 1, 0)
     ScaleDisp.BackgroundTransparency = 1
-    ScaleDisp.Text = "100%"
+    ScaleDisp.Text = math.floor(CurrentScale * 100 + 0.5) .. "%"
     ScaleDisp.Font = Enum.Font.GothamBold
     ScaleDisp.TextColor3 = Theme.White
     ScaleDisp.TextSize = 12
@@ -307,25 +335,24 @@ function Library:CreateWindow(titleText)
     PlusBtn.BackgroundTransparency = 1
     PlusBtn.TextSize = 14
 
-    local currentScale = 1.0
-    
     MinusBtn.MouseButton1Click:Connect(function()
-        if currentScale > 0.6 then
-            currentScale = currentScale - 0.1
-            MainScale.Scale = currentScale
-            ScaleDisp.Text = math.floor(currentScale * 100 + 0.5) .. "%"
+        if CurrentScale > 0.6 then
+            CurrentScale = CurrentScale - 0.1
+            MainScale.Scale = CurrentScale
+            ScaleDisp.Text = math.floor(CurrentScale * 100 + 0.5) .. "%"
+            SaveSettings()
         end
     end)
     
     PlusBtn.MouseButton1Click:Connect(function()
-        if currentScale < 1.6 then
-            currentScale = currentScale + 0.1
-            MainScale.Scale = currentScale
-            ScaleDisp.Text = math.floor(currentScale * 100 + 0.5) .. "%"
+        if CurrentScale < 1.6 then
+            CurrentScale = CurrentScale + 0.1
+            MainScale.Scale = CurrentScale
+            ScaleDisp.Text = math.floor(CurrentScale * 100 + 0.5) .. "%"
+            SaveSettings()
         end
     end)
 
-    -- Color Settings
     local ColorsTitle = Instance.new("TextLabel", SettingsFrame)
     ColorsTitle.Text = "Theme Colors"
     ColorsTitle.Size = UDim2.new(1, 0, 0, 20)
@@ -347,7 +374,6 @@ function Library:CreateWindow(titleText)
     GridL.CellPadding = UDim2.new(0, 10, 0, 10)
     GridL.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    -- Presets
     local Presets = {
         {Name = "Red", Main = Color3.fromRGB(255, 60, 60), Sec = Color3.fromRGB(180, 0, 0)},
         {Name = "Aqua", Main = Color3.fromRGB(0, 255, 230), Sec = Color3.fromRGB(160, 100, 255)},
@@ -355,6 +381,11 @@ function Library:CreateWindow(titleText)
         {Name = "Purple", Main = Color3.fromRGB(170, 0, 255), Sec = Color3.fromRGB(255, 0, 150)},
         {Name = "Orange", Main = Color3.fromRGB(255, 140, 0), Sec = Color3.fromRGB(255, 220, 0)},
         {Name = "Blue", Main = Color3.fromRGB(0, 120, 255), Sec = Color3.fromRGB(0, 200, 255)},
+        
+        {Name = "Blood", Main = Color3.fromRGB(255, 0, 0), Sec = Color3.fromRGB(255, 255, 255)},
+        {Name = "Mono", Main = Color3.fromRGB(255, 255, 255), Sec = Color3.fromRGB(0, 0, 0)},
+        {Name = "Lakers", Main = Color3.fromRGB(255, 215, 0), Sec = Color3.fromRGB(85, 37, 130)},
+        {Name = "Vapor", Main = Color3.fromRGB(255, 113, 206), Sec = Color3.fromRGB(1, 205, 254)},
     }
 
     for _, p in ipairs(Presets) do
@@ -389,19 +420,18 @@ function Library:CreateWindow(titleText)
             Theme.Accent = p.Main
             Theme.SecondaryAccent = p.Sec
             UpdateTheme()
-            TweenService:Create(CPreview, TweenInfo.new(0.2), {Size = UDim2.new(0, 44, 0, 44)}):Play()
+            TweenService:Create(CPreview, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 44, 0, 44)}):Play()
             task.wait(0.2)
-            TweenService:Create(CPreview, TweenInfo.new(0.2), {Size = UDim2.new(0, 36, 0, 36)}):Play()
+            TweenService:Create(CPreview, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 36, 0, 36)}):Play()
         end)
     end
 
-    -- Logic for Settings Button Toggle
     local settingsOpen = false
     SettingsBtn.MouseButton1Click:Connect(function()
         settingsOpen = not settingsOpen
         SettingsFrame.Visible = settingsOpen
         Content.Visible = not settingsOpen
-        VLine.Visible = not settingsOpen -- Прячем линию, когда настройки открыты
+        VLine.Visible = not settingsOpen
         
         if settingsOpen then
             TweenService:Create(SettingsBtn, TweenInfo.new(0.3), {TextColor3 = Theme.Accent}):Play()
@@ -422,13 +452,12 @@ function Library:CreateWindow(titleText)
         end
     end})
 
-    -- Toggle GUI Keybind
     UserInputService.InputBegan:Connect(function(input, gp)
         if input.KeyCode == Enum.KeyCode.RightShift and not gp then
             Main.Visible = not Main.Visible
             if Main.Visible then
                 Main.Size = UDim2.new(0,0,0,0)
-                TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 320)}):Play()
+                TweenService:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 320)}):Play()
             end
         end
     end)
@@ -480,7 +509,7 @@ function Library:CreateWindow(titleText)
         local function Activate()
             if CurrentTab then
                 local old = CurrentTab
-                TweenService:Create(old.Btn, TweenInfo.new(0.25), {BackgroundColor3 = Theme.TabInactive, BackgroundTransparency = 0.8}):Play()
+                TweenService:Create(old.Btn, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = Theme.TabInactive, BackgroundTransparency = 0.8}):Play()
                 TweenService:Create(old.Stroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
                 TweenService:Create(old.Label, TweenInfo.new(0.3), {TextColor3 = Theme.TextDim}):Play()
                 old.Grad.Enabled = false
@@ -488,8 +517,8 @@ function Library:CreateWindow(titleText)
             end
             CurrentTab = {Btn = Btn, Frame = TabFrame, Stroke = BtnStroke, Label = BtnLabel, Grad = BtnGrad}
             TabFrame.Visible = true; TabFrame.GroupTransparency = 1
-            TweenService:Create(TabFrame, TweenInfo.new(0.3), {GroupTransparency = 0}):Play()
-            TweenService:Create(Btn, TweenInfo.new(0.3), {BackgroundColor3 = Theme.TabActive, BackgroundTransparency = 0}):Play()
+            TweenService:Create(TabFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {GroupTransparency = 0}):Play()
+            TweenService:Create(Btn, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundColor3 = Theme.TabActive, BackgroundTransparency = 0}):Play()
             TweenService:Create(BtnStroke, TweenInfo.new(0.3), {Transparency = 0}):Play()
             TweenService:Create(BtnLabel, TweenInfo.new(0.3), {TextColor3 = Theme.White}):Play()
             BtnGrad.Enabled = true
@@ -500,19 +529,22 @@ function Library:CreateWindow(titleText)
 
         Btn.MouseEnter:Connect(function()
             if CurrentTab and CurrentTab.Btn ~= Btn then
-                TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.TabHover, BackgroundTransparency = 0.5}):Play()
+                TweenService:Create(Btn, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {BackgroundColor3 = Theme.TabHover, BackgroundTransparency = 0.5}):Play()
                 TweenService:Create(BtnLabel, TweenInfo.new(0.2), {TextColor3 = Theme.White}):Play()
             end
         end)
         Btn.MouseLeave:Connect(function()
             if CurrentTab and CurrentTab.Btn ~= Btn then
-                TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.TabInactive, BackgroundTransparency = 0.8}):Play()
+                TweenService:Create(Btn, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {BackgroundColor3 = Theme.TabInactive, BackgroundTransparency = 0.8}):Play()
                 TweenService:Create(BtnLabel, TweenInfo.new(0.2), {TextColor3 = Theme.TextDim}):Play()
             end
         end)
 
         local TabElements = {}
         function TabElements:CreateToggle(text, bindKey, defaultState, callback, bindCallback)
+            local savedBind = TogglesToSave[text]
+            if savedBind then bindKey = savedBind end
+
             local Frame = Instance.new("Frame", TabFrame)
             Frame.Size = UDim2.new(1, -2, 0, 40)
             Frame.BackgroundColor3 = Theme.Element
@@ -554,8 +586,8 @@ function Library:CreateWindow(titleText)
             local function UpdateToggle()
                 local tPos = toggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
                 local tCol = toggled and Theme.Accent or Color3.fromRGB(40, 40, 45)
-                TweenService:Create(Knob, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = tPos}):Play()
-                TweenService:Create(Switch, TweenInfo.new(0.2), {BackgroundColor3 = tCol}):Play()
+                TweenService:Create(Knob, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = tPos}):Play()
+                TweenService:Create(Switch, TweenInfo.new(0.3), {BackgroundColor3 = tCol}):Play()
                 TweenService:Create(Stroke, TweenInfo.new(0.3), {Transparency = toggled and 0.5 or 0.85, Color = toggled and Theme.Accent or Color3.fromRGB(60,60,60)}):Play()
                 if callback then callback(toggled) end
             end
@@ -570,16 +602,22 @@ function Library:CreateWindow(titleText)
             BindBtn.MouseButton1Click:Connect(function()
                 binding = true; BindBtn.Text = "..."; BindIcon.Visible = false; BindBtn.TextColor3 = Theme.Accent
             end)
+            
             UserInputService.InputBegan:Connect(function(input)
                 if binding and input.UserInputType == Enum.UserInputType.Keyboard then
                     binding = false; local k = input.KeyCode.Name
                     BindBtn.Text = k; BindBtn.TextColor3 = Theme.TextDim
+                    TogglesToSave[text] = k
+                    SaveSettings()
                     if bindCallback then bindCallback(k) end
                 end
                 if not binding and input.KeyCode.Name == BindBtn.Text and not UserInputService:GetFocusedTextBox() then
                     toggled = not toggled; UpdateToggle()
                 end
             end)
+            
+            TogglesToSave[text] = BindBtn.Text
+            
             return { Set = function(self, bool) toggled = bool; UpdateToggle() end }
         end
         return TabElements
