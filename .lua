@@ -20,8 +20,8 @@ local Theme = {
     
     Element = Color3.fromRGB(22, 22, 28),
     
-    Accent = Color3.fromRGB(0, 255, 230), -- Aqua
-    SecondaryAccent = Color3.fromRGB(160, 100, 255), -- Purple
+    Accent = Color3.fromRGB(255, 60, 60), -- Поставил красный по умолчанию, как на скрине
+    SecondaryAccent = Color3.fromRGB(180, 0, 0), -- Темно-красный
     White = Color3.fromRGB(255, 255, 255),
     
     Text = Color3.fromRGB(255, 255, 255),
@@ -122,21 +122,19 @@ function Library:CreateWindow(titleText)
     -- Main Frame
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
-    Main.Size = UDim2.new(0, 0, 0, 0) -- Start small
+    Main.Size = UDim2.new(0, 0, 0, 0) 
     Main.Position = UDim2.new(0.5, -210, 0.4, 0)
     Main.BackgroundColor3 = Theme.Bg
     Main.BorderSizePixel = 0
     Main.ClipsDescendants = true 
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
     
-    -- UI Scale for Resizing
     local MainScale = Instance.new("UIScale", Main)
     MainScale.Scale = 1
     
     -- Opening Animation
     TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 320)}):Play()
     
-    -- Animated Stroke
     local MainStroke = Instance.new("UIStroke", Main)
     MainStroke.Thickness = 3
     MainStroke.Transparency = 0
@@ -150,7 +148,6 @@ function Library:CreateWindow(titleText)
     Header.Size = UDim2.new(1, 0, 0, 45)
     Header.BackgroundTransparency = 1
     
-    -- Title (Animated Gradient)
     local Title = Instance.new("TextLabel", Header)
     Title.Text = titleText or "UI Library"
     Title.Font = Enum.Font.GothamBlack
@@ -160,13 +157,12 @@ function Library:CreateWindow(titleText)
     Title.BackgroundTransparency = 1
     CreateAnimatedGradient(Title, true)
 
-    -- Buttons Container
     local BtnContainer = Instance.new("Frame", Header)
     BtnContainer.Size = UDim2.new(0, 60, 1, 0)
     BtnContainer.Position = UDim2.new(1, -65, 0, 0)
     BtnContainer.BackgroundTransparency = 1
 
-    -- Close Button (X)
+    -- Close Button
     local CloseBtn = Instance.new("TextButton", BtnContainer)
     CloseBtn.Name = "Close"
     CloseBtn.Text = ""
@@ -198,20 +194,19 @@ function Library:CreateWindow(titleText)
     -- Settings Button (S)
     local SettingsBtn = Instance.new("TextButton", BtnContainer)
     SettingsBtn.Name = "Settings"
-    SettingsBtn.Text = "S" -- Текст вместо иконки
+    SettingsBtn.Text = "S"
     SettingsBtn.Font = Enum.Font.GothamBlack
-    SettingsBtn.TextColor3 = Theme.TextDim -- Начальный цвет
+    SettingsBtn.TextColor3 = Theme.TextDim
     SettingsBtn.TextSize = 14
     SettingsBtn.Size = UDim2.new(0, 26, 0, 26)
     SettingsBtn.Position = UDim2.new(1, -58, 0.5, -13)
     SettingsBtn.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
     Instance.new("UICorner", SettingsBtn).CornerRadius = UDim.new(0, 8)
 
-    -- Обводка кнопки S
     local SettingsStroke = Instance.new("UIStroke", SettingsBtn)
     SettingsStroke.Color = Theme.TextDim; SettingsStroke.Thickness = 1.2; SettingsStroke.Transparency = 0.8
 
-    -- Glow Line
+    -- Horizontal Glow Line (Under Header)
     local Line = Instance.new("Frame", Main)
     Line.Size = UDim2.new(1, -30, 0, 2)
     Line.Position = UDim2.new(0, 15, 0, 45)
@@ -221,7 +216,7 @@ function Library:CreateWindow(titleText)
     LineGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Theme.Bg), ColorSequenceKeypoint.new(0.5, Theme.Accent), ColorSequenceKeypoint.new(1, Theme.Bg)}
     table.insert(Registry, {Object = LineGrad, ThemeType = "Gradient"})
 
-    -- Containers
+    -- Sidebar Container
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Size = UDim2.new(0, 110, 1, -55)
     Sidebar.Position = UDim2.new(0, 10, 0, 50)
@@ -230,6 +225,19 @@ function Library:CreateWindow(titleText)
     SidebarLayout.Padding = UDim.new(0, 8)
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     local SidebarPad = Instance.new("UIPadding", Sidebar); SidebarPad.PaddingTop = UDim.new(0, 5)
+
+    -- [[ VERTICAL DIVIDER LINE ]] --
+    local VLine = Instance.new("Frame", Main)
+    VLine.Name = "VerticalLine"
+    VLine.Size = UDim2.new(0, 2, 1, -70) -- Высота линии
+    VLine.Position = UDim2.new(0, 125, 0, 55) -- Позиция справа от табов
+    VLine.BackgroundColor3 = Theme.White
+    VLine.BorderSizePixel = 0
+    VLine.ZIndex = 2
+    
+    local VLineGrad = CreateAnimatedGradient(VLine, false)
+    VLineGrad.Rotation = 90 -- Вертикальный градиент
+    -- [[ END VERTICAL DIVIDER ]] --
 
     local Content = Instance.new("Frame", Main)
     Content.Size = UDim2.new(1, -145, 1, -55)
@@ -242,7 +250,7 @@ function Library:CreateWindow(titleText)
     SettingsFrame.Size = UDim2.new(1, -20, 1, -60)
     SettingsFrame.Position = UDim2.new(0, 10, 0, 50)
     SettingsFrame.BackgroundColor3 = Theme.Bg
-    SettingsFrame.BackgroundTransparency = 1 -- Transparent logic handled by Blur
+    SettingsFrame.BackgroundTransparency = 1 
     SettingsFrame.Visible = false
     SettingsFrame.ZIndex = 5
     
@@ -252,7 +260,7 @@ function Library:CreateWindow(titleText)
     Blur.BackgroundTransparency = 0.1
     Instance.new("UICorner", Blur).CornerRadius = UDim.new(0, 8)
     
-    -- 1. Scale Settings Section
+    -- Scale Settings
     local ScaleSection = Instance.new("Frame", SettingsFrame)
     ScaleSection.Size = UDim2.new(1, 0, 0, 60)
     ScaleSection.Position = UDim2.new(0, 0, 0, 0)
@@ -317,7 +325,7 @@ function Library:CreateWindow(titleText)
         end
     end)
 
-    -- 2. Color Settings Section
+    -- Color Settings
     local ColorsTitle = Instance.new("TextLabel", SettingsFrame)
     ColorsTitle.Text = "Theme Colors"
     ColorsTitle.Size = UDim2.new(1, 0, 0, 20)
@@ -341,8 +349,8 @@ function Library:CreateWindow(titleText)
 
     -- Presets
     local Presets = {
+        {Name = "Red", Main = Color3.fromRGB(255, 60, 60), Sec = Color3.fromRGB(180, 0, 0)},
         {Name = "Aqua", Main = Color3.fromRGB(0, 255, 230), Sec = Color3.fromRGB(160, 100, 255)},
-        {Name = "Red", Main = Color3.fromRGB(255, 60, 60), Sec = Color3.fromRGB(255, 150, 50)},
         {Name = "Green", Main = Color3.fromRGB(60, 255, 100), Sec = Color3.fromRGB(180, 255, 60)},
         {Name = "Purple", Main = Color3.fromRGB(170, 0, 255), Sec = Color3.fromRGB(255, 0, 150)},
         {Name = "Orange", Main = Color3.fromRGB(255, 140, 0), Sec = Color3.fromRGB(255, 220, 0)},
@@ -393,6 +401,7 @@ function Library:CreateWindow(titleText)
         settingsOpen = not settingsOpen
         SettingsFrame.Visible = settingsOpen
         Content.Visible = not settingsOpen
+        VLine.Visible = not settingsOpen -- Прячем линию, когда настройки открыты
         
         if settingsOpen then
             TweenService:Create(SettingsBtn, TweenInfo.new(0.3), {TextColor3 = Theme.Accent}):Play()
@@ -403,7 +412,6 @@ function Library:CreateWindow(titleText)
         end
     end)
     
-    -- Register "S" button for updates
     table.insert(Registry, {Object = SettingsBtn, CustomUpdate = function()
         if settingsOpen then 
             SettingsBtn.TextColor3 = Theme.Accent 
