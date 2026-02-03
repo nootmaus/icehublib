@@ -258,16 +258,46 @@ function Library:CreateWindow(titleText)
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     local SidebarPad = Instance.new("UIPadding", Sidebar); SidebarPad.PaddingTop = UDim.new(0, 5)
 
+    -- [[ ANIMATED VERTICAL LINE ]] --
     local VLine = Instance.new("Frame", Main)
     VLine.Name = "VerticalLine"
-    VLine.Size = UDim2.new(0, 2, 1, -70)
+    VLine.Size = UDim2.new(0, 3, 1, -70) 
     VLine.Position = UDim2.new(0, 125, 0, 55)
     VLine.BackgroundColor3 = Theme.White
     VLine.BorderSizePixel = 0
     VLine.ZIndex = 2
     
-    local VLineGrad = CreateAnimatedGradient(VLine, false)
-    VLineGrad.Rotation = 90
+    local VLineGrad = Instance.new("UIGradient", VLine)
+    VLineGrad.Rotation = -90 -- Vertical Upwards
+    
+    -- Custom Update Logic for Energy Beam
+    local function UpdateVLineColor()
+        VLineGrad.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.Bg),
+            ColorSequenceKeypoint.new(0.2, Theme.SecondaryAccent),
+            ColorSequenceKeypoint.new(0.5, Theme.Accent),
+            ColorSequenceKeypoint.new(0.8, Theme.SecondaryAccent),
+            ColorSequenceKeypoint.new(1, Theme.Bg)
+        }
+    end
+    UpdateVLineColor()
+    
+    table.insert(Registry, {Object = VLine, CustomUpdate = UpdateVLineColor})
+
+    -- Energy Flow Animation
+    RunService.RenderStepped:Connect(function()
+        local tickTime = tick()
+        -- Flowing Offset
+        VLineGrad.Offset = Vector2.new(0, (tickTime * 1.5) % 1 - 0.5)
+        -- Pulsing Width/Opacity effect simulation
+        local pulse = math.abs(math.sin(tickTime * 3)) * 0.2
+        VLineGrad.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.5, 0.1 + pulse), -- Pulsing center
+            NumberSequenceKeypoint.new(1, 1)
+        }
+    end)
+    -- [[ END ANIMATED VERTICAL LINE ]] --
 
     local Content = Instance.new("Frame", Main)
     Content.Size = UDim2.new(1, -145, 1, -55)
