@@ -26,6 +26,7 @@ local Theme = {
 
 local ConfigName = "NamelessHub_Config.json"
 local CurrentScale = 1.0
+local MenuBind = "RightShift" -- Default Keybind
 
 local function SaveSettings()
     if not writefile then return end
@@ -36,6 +37,7 @@ local function SaveSettings()
             Sec = {R = Theme.SecondaryAccent.R, G = Theme.SecondaryAccent.G, B = Theme.SecondaryAccent.B}
         },
         Scale = CurrentScale,
+        UIKey = MenuBind,
         Binds = {}
     }
 
@@ -60,6 +62,9 @@ local function LoadSettings()
         end
         if result.Scale then
             CurrentScale = result.Scale
+        end
+        if result.UIKey then
+            MenuBind = result.UIKey
         end
         if result.Binds then
             TogglesToSave = result.Binds
@@ -240,7 +245,6 @@ function Library:CreateWindow(titleText)
     local SettingsStroke = Instance.new("UIStroke", SettingsBtn)
     SettingsStroke.Color = Theme.TextDim; SettingsStroke.Thickness = 1.2; SettingsStroke.Transparency = 0.8
 
-    -- [[ ANIMATED HORIZONTAL LINE ]] --
     local Line = Instance.new("Frame", Main)
     Line.Size = UDim2.new(1, -30, 0, 2)
     Line.Position = UDim2.new(0, 15, 0, 45)
@@ -249,9 +253,8 @@ function Library:CreateWindow(titleText)
     Line.ZIndex = 2
 
     local LineGrad = Instance.new("UIGradient", Line)
-    LineGrad.Rotation = 0 -- Horizontal
+    LineGrad.Rotation = 0 
 
-    -- Shared logic for gradients
     local function GetScannerColorSeq()
         return ColorSequence.new{
             ColorSequenceKeypoint.new(0, Theme.Bg),
@@ -267,7 +270,6 @@ function Library:CreateWindow(titleText)
     end
     UpdateHLineColor()
     table.insert(Registry, {Object = Line, CustomUpdate = UpdateHLineColor})
-    -- [[ END HORIZONTAL LINE ]] --
 
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Size = UDim2.new(0, 110, 1, -55)
@@ -278,7 +280,6 @@ function Library:CreateWindow(titleText)
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     local SidebarPad = Instance.new("UIPadding", Sidebar); SidebarPad.PaddingTop = UDim.new(0, 5)
 
-    -- [[ ANIMATED VERTICAL LINE ]] --
     local VLine = Instance.new("Frame", Main)
     VLine.Name = "VerticalLine"
     VLine.Size = UDim2.new(0, 2, 1, -70) 
@@ -295,15 +296,12 @@ function Library:CreateWindow(titleText)
     end
     UpdateVLineColor()
     table.insert(Registry, {Object = VLine, CustomUpdate = UpdateVLineColor})
-    -- [[ END VERTICAL LINE ]] --
 
-    -- [[ SCANNER ANIMATION LOOP (SYNCED) ]] --
     RunService.RenderStepped:Connect(function()
         local tickTime = tick()
         local scanPos = math.sin(tickTime * 1.5) * 0.8
         local pulse = 0.2 + (math.sin(tickTime * 3) * 0.1)
         
-        -- Apply to Vertical
         VLineGrad.Offset = Vector2.new(0, scanPos)
         VLineGrad.Transparency = NumberSequence.new{
             NumberSequenceKeypoint.new(0, 1),
@@ -311,7 +309,6 @@ function Library:CreateWindow(titleText)
             NumberSequenceKeypoint.new(1, 1)
         }
         
-        -- Apply to Horizontal
         LineGrad.Offset = Vector2.new(scanPos, 0)
         LineGrad.Transparency = NumberSequence.new{
             NumberSequenceKeypoint.new(0, 1),
@@ -319,7 +316,6 @@ function Library:CreateWindow(titleText)
             NumberSequenceKeypoint.new(1, 1)
         }
     end)
-    -- [[ END ANIMATION ]] --
 
     local Content = Instance.new("Frame", Main)
     Content.Size = UDim2.new(1, -145, 1, -55)
@@ -341,8 +337,9 @@ function Library:CreateWindow(titleText)
     Blur.BackgroundTransparency = 0.05
     Instance.new("UICorner", Blur).CornerRadius = UDim.new(0, 8)
     
+    -- [[ SCALE SECTION ]]
     local ScaleSection = Instance.new("Frame", SettingsFrame)
-    ScaleSection.Size = UDim2.new(1, 0, 0, 60)
+    ScaleSection.Size = UDim2.new(1, 0, 0, 40)
     ScaleSection.Position = UDim2.new(0, 0, 0, 0)
     ScaleSection.BackgroundTransparency = 1
     ScaleSection.ZIndex = 6
@@ -356,8 +353,8 @@ function Library:CreateWindow(titleText)
     ScaleLabel.BackgroundTransparency = 1
     
     local ScaleControl = Instance.new("Frame", ScaleSection)
-    ScaleControl.Size = UDim2.new(0, 120, 0, 30)
-    ScaleControl.Position = UDim2.new(0.5, -60, 0, 25)
+    ScaleControl.Size = UDim2.new(0, 100, 0, 24)
+    ScaleControl.Position = UDim2.new(0.5, -50, 0, 22)
     ScaleControl.BackgroundColor3 = Theme.Element
     Instance.new("UICorner", ScaleControl).CornerRadius = UDim.new(0, 6)
     
@@ -405,10 +402,50 @@ function Library:CreateWindow(titleText)
         end
     end)
 
+    -- [[ UI KEYBIND SECTION ]]
+    local BindSection = Instance.new("Frame", SettingsFrame)
+    BindSection.Size = UDim2.new(1, 0, 0, 40)
+    BindSection.Position = UDim2.new(0, 0, 0, 55)
+    BindSection.BackgroundTransparency = 1
+    BindSection.ZIndex = 6
+
+    local BindLabel = Instance.new("TextLabel", BindSection)
+    BindLabel.Text = "Menu Keybind"
+    BindLabel.Size = UDim2.new(1, 0, 0, 20)
+    BindLabel.Font = Enum.Font.GothamBold
+    BindLabel.TextColor3 = Theme.Text
+    BindLabel.TextSize = 14
+    BindLabel.BackgroundTransparency = 1
+
+    local KeybindBtn = Instance.new("TextButton", BindSection)
+    KeybindBtn.Size = UDim2.new(0, 100, 0, 24)
+    KeybindBtn.Position = UDim2.new(0.5, -50, 0, 22)
+    KeybindBtn.BackgroundColor3 = Theme.Element
+    KeybindBtn.Text = MenuBind
+    KeybindBtn.Font = Enum.Font.GothamBold
+    KeybindBtn.TextColor3 = Theme.TextDim
+    KeybindBtn.TextSize = 12
+    Instance.new("UICorner", KeybindBtn).CornerRadius = UDim.new(0, 6)
+    
+    local KeybindStroke = Instance.new("UIStroke", KeybindBtn)
+    KeybindStroke.Color = Theme.Accent
+    KeybindStroke.Thickness = 1
+    KeybindStroke.Transparency = 0.8
+    RegisterObject(KeybindStroke, "Color", "Accent")
+
+    local isBindingUI = false
+    KeybindBtn.MouseButton1Click:Connect(function()
+        isBindingUI = true
+        KeybindBtn.Text = "..."
+        KeybindBtn.TextColor3 = Theme.Accent
+        KeybindStroke.Transparency = 0
+    end)
+
+    -- [[ COLORS SECTION ]]
     local ColorsTitle = Instance.new("TextLabel", SettingsFrame)
     ColorsTitle.Text = "Theme Colors"
     ColorsTitle.Size = UDim2.new(1, 0, 0, 20)
-    ColorsTitle.Position = UDim2.new(0, 0, 0, 70)
+    ColorsTitle.Position = UDim2.new(0, 0, 0, 110)
     ColorsTitle.Font = Enum.Font.GothamBold
     ColorsTitle.TextColor3 = Theme.Text
     ColorsTitle.TextSize = 14
@@ -416,14 +453,14 @@ function Library:CreateWindow(titleText)
     ColorsTitle.ZIndex = 6
 
     local ColorsGrid = Instance.new("Frame", SettingsFrame)
-    ColorsGrid.Size = UDim2.new(1, 0, 1, -100)
-    ColorsGrid.Position = UDim2.new(0, 0, 0, 100)
+    ColorsGrid.Size = UDim2.new(1, 0, 1, -140)
+    ColorsGrid.Position = UDim2.new(0, 0, 0, 140)
     ColorsGrid.BackgroundTransparency = 1
     ColorsGrid.ZIndex = 6
     
     local GridL = Instance.new("UIGridLayout", ColorsGrid)
-    GridL.CellSize = UDim2.new(0, 70, 0, 70)
-    GridL.CellPadding = UDim2.new(0, 10, 0, 10)
+    GridL.CellSize = UDim2.new(0, 60, 0, 60)
+    GridL.CellPadding = UDim2.new(0, 8, 0, 8)
     GridL.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
     local Presets = {
@@ -447,8 +484,8 @@ function Library:CreateWindow(titleText)
         Instance.new("UICorner", CBtn).CornerRadius = UDim.new(0, 8)
         
         local CPreview = Instance.new("Frame", CBtn)
-        CPreview.Size = UDim2.new(0, 36, 0, 36)
-        CPreview.Position = UDim2.new(0.5, -18, 0.5, -18)
+        CPreview.Size = UDim2.new(0, 30, 0, 30)
+        CPreview.Position = UDim2.new(0.5, -15, 0.5, -15)
         CPreview.BorderSizePixel = 0
         Instance.new("UICorner", CPreview).CornerRadius = UDim.new(1, 0)
         
@@ -462,19 +499,19 @@ function Library:CreateWindow(titleText)
         local CName = Instance.new("TextLabel", CBtn)
         CName.Text = p.Name
         CName.Size = UDim2.new(1, 0, 0, 15)
-        CName.Position = UDim2.new(0, 0, 1, -18)
+        CName.Position = UDim2.new(0, 0, 1, -12)
         CName.BackgroundTransparency = 1
         CName.TextColor3 = Theme.TextDim
         CName.Font = Enum.Font.GothamBold
-        CName.TextSize = 10
+        CName.TextSize = 9
 
         CBtn.MouseButton1Click:Connect(function()
             Theme.Accent = p.Main
             Theme.SecondaryAccent = p.Sec
             UpdateTheme()
-            TweenService:Create(CPreview, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 44, 0, 44)}):Play()
+            TweenService:Create(CPreview, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 38, 0, 38)}):Play()
             task.wait(0.2)
-            TweenService:Create(CPreview, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 36, 0, 36)}):Play()
+            TweenService:Create(CPreview, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 30, 0, 30)}):Play()
         end)
     end
 
@@ -506,7 +543,19 @@ function Library:CreateWindow(titleText)
     end})
 
     UserInputService.InputBegan:Connect(function(input, gp)
-        if input.KeyCode == Enum.KeyCode.RightShift and not gp then
+        -- Handle Menu Binding Change
+        if isBindingUI and input.UserInputType == Enum.UserInputType.Keyboard then
+            isBindingUI = false
+            MenuBind = input.KeyCode.Name
+            KeybindBtn.Text = MenuBind
+            KeybindBtn.TextColor3 = Theme.TextDim
+            KeybindStroke.Transparency = 0.8
+            SaveSettings()
+            return
+        end
+
+        -- Toggle GUI
+        if input.KeyCode.Name == MenuBind and not gp and not isBindingUI then
             Main.Visible = not Main.Visible
             if Main.Visible then
                 Main.Size = UDim2.new(0,0,0,0)
