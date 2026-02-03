@@ -240,14 +240,34 @@ function Library:CreateWindow(titleText)
     local SettingsStroke = Instance.new("UIStroke", SettingsBtn)
     SettingsStroke.Color = Theme.TextDim; SettingsStroke.Thickness = 1.2; SettingsStroke.Transparency = 0.8
 
+    -- [[ ANIMATED HORIZONTAL LINE ]] --
     local Line = Instance.new("Frame", Main)
     Line.Size = UDim2.new(1, -30, 0, 2)
     Line.Position = UDim2.new(0, 15, 0, 45)
     Line.BackgroundColor3 = Theme.White
     Line.BorderSizePixel = 0
+    Line.ZIndex = 2
+
     local LineGrad = Instance.new("UIGradient", Line)
-    LineGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Theme.Bg), ColorSequenceKeypoint.new(0.5, Theme.Accent), ColorSequenceKeypoint.new(1, Theme.Bg)}
-    table.insert(Registry, {Object = LineGrad, ThemeType = "Gradient"})
+    LineGrad.Rotation = 0 -- Horizontal
+
+    -- Shared logic for gradients
+    local function GetScannerColorSeq()
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.Bg),
+            ColorSequenceKeypoint.new(0.45, Theme.Accent),
+            ColorSequenceKeypoint.new(0.5, Theme.White), 
+            ColorSequenceKeypoint.new(0.55, Theme.Accent),
+            ColorSequenceKeypoint.new(1, Theme.Bg)
+        }
+    end
+
+    local function UpdateHLineColor()
+        LineGrad.Color = GetScannerColorSeq()
+    end
+    UpdateHLineColor()
+    table.insert(Registry, {Object = Line, CustomUpdate = UpdateHLineColor})
+    -- [[ END HORIZONTAL LINE ]] --
 
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Size = UDim2.new(0, 110, 1, -55)
@@ -258,7 +278,7 @@ function Library:CreateWindow(titleText)
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     local SidebarPad = Instance.new("UIPadding", Sidebar); SidebarPad.PaddingTop = UDim.new(0, 5)
 
-    -- [[ BETTER VERTICAL SCANNER LINE ]] --
+    -- [[ ANIMATED VERTICAL LINE ]] --
     local VLine = Instance.new("Frame", Main)
     VLine.Name = "VerticalLine"
     VLine.Size = UDim2.new(0, 2, 1, -70) 
@@ -270,35 +290,36 @@ function Library:CreateWindow(titleText)
     local VLineGrad = Instance.new("UIGradient", VLine)
     VLineGrad.Rotation = -90 
     
-    -- Function to update the complex gradient (Accent -> White -> Accent)
-    local function UpdateScannerColor()
-        VLineGrad.Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Theme.Bg), -- Fade top
-            ColorSequenceKeypoint.new(0.45, Theme.Accent),
-            ColorSequenceKeypoint.new(0.5, Theme.White), -- Hot center
-            ColorSequenceKeypoint.new(0.55, Theme.Accent),
-            ColorSequenceKeypoint.new(1, Theme.Bg) -- Fade bottom
-        }
+    local function UpdateVLineColor()
+        VLineGrad.Color = GetScannerColorSeq()
     end
-    UpdateScannerColor()
-    
-    table.insert(Registry, {Object = VLine, CustomUpdate = UpdateScannerColor})
+    UpdateVLineColor()
+    table.insert(Registry, {Object = VLine, CustomUpdate = UpdateVLineColor})
+    -- [[ END VERTICAL LINE ]] --
 
-    -- Smooth Scanner Animation
+    -- [[ SCANNER ANIMATION LOOP (SYNCED) ]] --
     RunService.RenderStepped:Connect(function()
-        -- math.sin creates a smooth up/down wave
-        local scanPosition = math.sin(tick() * 1.5) * 0.8
-        VLineGrad.Offset = Vector2.new(0, scanPosition)
+        local tickTime = tick()
+        local scanPos = math.sin(tickTime * 1.5) * 0.8
+        local pulse = 0.2 + (math.sin(tickTime * 3) * 0.1)
         
-        -- Subtle breathing effect
-        local transparencyVal = 0.2 + (math.sin(tick() * 3) * 0.1)
+        -- Apply to Vertical
+        VLineGrad.Offset = Vector2.new(0, scanPos)
         VLineGrad.Transparency = NumberSequence.new{
             NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(0.5, transparencyVal), -- Clear center
+            NumberSequenceKeypoint.new(0.5, pulse), 
+            NumberSequenceKeypoint.new(1, 1)
+        }
+        
+        -- Apply to Horizontal
+        LineGrad.Offset = Vector2.new(scanPos, 0)
+        LineGrad.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.5, pulse), 
             NumberSequenceKeypoint.new(1, 1)
         }
     end)
-    -- [[ END BETTER LINE ]] --
+    -- [[ END ANIMATION ]] --
 
     local Content = Instance.new("Frame", Main)
     Content.Size = UDim2.new(1, -145, 1, -55)
@@ -463,6 +484,7 @@ function Library:CreateWindow(titleText)
         SettingsFrame.Visible = settingsOpen
         Content.Visible = not settingsOpen
         VLine.Visible = not settingsOpen
+        Line.Visible = not settingsOpen
         
         if settingsOpen then
             TweenService:Create(SettingsBtn, TweenInfo.new(0.3), {TextColor3 = Theme.Accent}):Play()
