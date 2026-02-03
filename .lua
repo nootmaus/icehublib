@@ -7,7 +7,10 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 
--- [ THEME ]
+-- [ THEME & REGISTRY ]
+-- Система реестра позволяет обновлять цвета всех элементов "на лету"
+local Registry = {} -- {Instance = obj, Property = prop, Type = "Accent"|"Secondary"|"Text"}
+
 local Theme = {
     Bg = Color3.fromRGB(12, 12, 18),
     Sidebar = Color3.fromRGB(18, 18, 24),
@@ -18,8 +21,8 @@ local Theme = {
     
     Element = Color3.fromRGB(22, 22, 28),
     
-    Accent = Color3.fromRGB(0, 255, 230), -- Aqua
-    SecondaryAccent = Color3.fromRGB(160, 100, 255), -- Purple
+    Accent = Color3.fromRGB(0, 255, 230), -- Default Aqua
+    SecondaryAccent = Color3.fromRGB(160, 100, 255), -- Default Purple
     White = Color3.fromRGB(255, 255, 255),
     
     Text = Color3.fromRGB(255, 255, 255),
@@ -27,12 +30,71 @@ local Theme = {
 }
 
 -- [ HELPER FUNCTIONS ]
-local function CreateAnimatedGradient(parent, colors)
+
+-- Функция регистрации объекта для смены темы
+local function RegisterObject(obj, prop, themeType)
+    table.insert(Registry, {Object = obj, Property = prop, ThemeType = themeType})
+end
+
+-- Функция обновления всех цветов
+local function UpdateTheme()
+    for _, data in ipairs(Registry) do
+        if data.Object and data.Object.Parent then -- Проверка, существует ли объект
+            local color
+            if data.ThemeType == "Accent" then color = Theme.Accent
+            elseif data.ThemeType == "Secondary" then color = Theme.SecondaryAccent
+            elseif data.ThemeType == "Text" then color = Theme.Text
+            elseif data.ThemeType == "Gradient" then
+                -- Для градиентов особая логика
+                data.Object.Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, Theme.Accent),
+                    ColorSequenceKeypoint.new(0.5, Theme.SecondaryAccent),
+                    ColorSequenceKeypoint.new(1, Theme.Accent)
+                }
+                color = nil -- Уже применили
+            elseif data.ThemeType == "TitleGradient" then
+                data.Object.Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, Theme.Accent),
+                    ColorSequenceKeypoint.new(1, Theme.SecondaryAccent)
+                }
+                color = nil
+            end
+            
+            if color then
+                TweenService:Create(data.Object, TweenInfo.new(0.5), {[data.Property] = color}):Play()
+            end
+        end
+    end
+end
+
+local function CreateAnimatedGradient(parent, isTitle)
     local gradient = Instance.new("UIGradient", parent)
-    gradient.Color = ColorSequence.new(colors)
-    gradient.Rotation = 45
+    
+    -- Регистрируем градиент, чтобы он менял цвета
+    if isTitle then
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.Accent), 
+            ColorSequenceKeypoint.new(1, Theme.SecondaryAccent)
+        }
+        RegisterObject(gradient, "Color", "TitleGradient")
+    else
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Theme.Accent), 
+            ColorSequenceKeypoint.new(0.5, Theme.SecondaryAccent), 
+            ColorSequenceKeypoint.new(1, Theme.Accent)
+        }
+        RegisterObject(gradient, "Color", "Gradient")
+        gradient.Rotation = 45
+    end
+
     RunService.RenderStepped:Connect(function()
-        gradient.Rotation = (tick() * 60) % 360
+        if isTitle then
+             -- Для текста красивее просто сдвиг цветов, но UIGradient ограничен.
+             -- Будем вращать медленно для эффекта перелива
+             gradient.Rotation = (tick() * 45) % 360
+        else
+             gradient.Rotation = (tick() * 60) % 360
+        end
     end)
     return gradient
 end
@@ -48,7 +110,8 @@ local function MakeDraggable(obj)
     obj.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
     UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then
         local delta = input.Position - dragStart
-        obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        -- Используем Tween для плавности перетаскивания
+        TweenService:Create(obj, TweenInfo.new(0.05), {Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)}):Play()
     end end)
 end
 
@@ -64,22 +127,22 @@ function Library:CreateWindow(titleText)
     -- Main Frame
     local Main = Instance.new("Frame", ScreenGui)
     Main.Name = "MainFrame"
-    Main.Size = UDim2.new(0, 420, 0, 320)
+    Main.Size = UDim2.new(0, 0, 0, 0) -- Start small for animation
     Main.Position = UDim2.new(0.5, -210, 0.4, 0)
     Main.BackgroundColor3 = Theme.Bg
     Main.BorderSizePixel = 0
+    Main.ClipsDescendants = true -- Важно для анимации открытия
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+    
+    -- Opening Animation
+    TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 320)}):Play()
     
     -- Animated Stroke
     local MainStroke = Instance.new("UIStroke", Main)
     MainStroke.Thickness = 3
     MainStroke.Transparency = 0
     MainStroke.Color = Theme.White
-    CreateAnimatedGradient(MainStroke, {
-        ColorSequenceKeypoint.new(0, Theme.Accent),
-        ColorSequenceKeypoint.new(0.5, Theme.SecondaryAccent),
-        ColorSequenceKeypoint.new(1, Theme.Accent)
-    })
+    CreateAnimatedGradient(MainStroke, false) -- false = not title
     
     MakeDraggable(Main)
 
@@ -88,6 +151,7 @@ function Library:CreateWindow(titleText)
     Header.Size = UDim2.new(1, 0, 0, 45)
     Header.BackgroundTransparency = 1
     
+    -- Title (Animated Gradient)
     local Title = Instance.new("TextLabel", Header)
     Title.Text = titleText or "UI Library"
     Title.Font = Enum.Font.GothamBlack
@@ -95,16 +159,25 @@ function Library:CreateWindow(titleText)
     Title.TextColor3 = Theme.White
     Title.Size = UDim2.new(1, 0, 1, 0)
     Title.BackgroundTransparency = 1
-    local TitleGrad = Instance.new("UIGradient", Title)
-    TitleGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Theme.Accent), ColorSequenceKeypoint.new(1, Theme.SecondaryAccent)}
+    
+    -- Применяем анимированный градиент к тексту
+    CreateAnimatedGradient(Title, true) -- true = is title
+
+    -- Buttons Container (Top Right)
+    local BtnContainer = Instance.new("Frame", Header)
+    BtnContainer.Size = UDim2.new(0, 60, 1, 0)
+    BtnContainer.Position = UDim2.new(1, -65, 0, 0)
+    BtnContainer.BackgroundTransparency = 1
 
     -- Close Button
-    local CloseBtn = Instance.new("TextButton", Header)
+    local CloseBtn = Instance.new("TextButton", BtnContainer)
+    CloseBtn.Name = "Close"
     CloseBtn.Text = ""
     CloseBtn.Size = UDim2.new(0, 26, 0, 26)
-    CloseBtn.Position = UDim2.new(1, -36, 0.5, -13)
+    CloseBtn.Position = UDim2.new(1, -26, 0.5, -13)
     CloseBtn.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
     Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+    
     local CloseIcon = Instance.new("ImageLabel", CloseBtn)
     CloseIcon.Size = UDim2.new(0, 10, 0, 10)
     CloseIcon.Position = UDim2.new(0.5, -5, 0.5, -5)
@@ -113,9 +186,38 @@ function Library:CreateWindow(titleText)
     CloseIcon.ImageRectOffset = Vector2.new(284, 4)
     CloseIcon.ImageRectSize = Vector2.new(24, 24)
     CloseIcon.ImageColor3 = Theme.Accent
+    RegisterObject(CloseIcon, "ImageColor3", "Accent")
+
     local CloseStroke = Instance.new("UIStroke", CloseBtn)
     CloseStroke.Color = Theme.Accent; CloseStroke.Thickness = 1.2; CloseStroke.Transparency = 0.5
-    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+    RegisterObject(CloseStroke, "Color", "Accent")
+    
+    CloseBtn.MouseButton1Click:Connect(function() 
+        TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)}):Play()
+        task.wait(0.3)
+        ScreenGui:Destroy() 
+    end)
+
+    -- Settings Button (Gear)
+    local SettingsBtn = Instance.new("TextButton", BtnContainer)
+    SettingsBtn.Name = "Settings"
+    SettingsBtn.Text = ""
+    SettingsBtn.Size = UDim2.new(0, 26, 0, 26)
+    SettingsBtn.Position = UDim2.new(1, -58, 0.5, -13) -- Левее кнопки закрытия
+    SettingsBtn.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
+    Instance.new("UICorner", SettingsBtn).CornerRadius = UDim.new(0, 8)
+
+    local SettingsIcon = Instance.new("ImageLabel", SettingsBtn)
+    SettingsIcon.Size = UDim2.new(0, 14, 0, 14)
+    SettingsIcon.Position = UDim2.new(0.5, -7, 0.5, -7)
+    SettingsIcon.BackgroundTransparency = 1
+    SettingsIcon.Image = "rbxassetid://3926307971" -- Gear Icon
+    SettingsIcon.ImageRectOffset = Vector2.new(324, 124)
+    SettingsIcon.ImageRectSize = Vector2.new(36, 36)
+    SettingsIcon.ImageColor3 = Theme.TextDim
+
+    local SettingsStroke = Instance.new("UIStroke", SettingsBtn)
+    SettingsStroke.Color = Theme.TextDim; SettingsStroke.Thickness = 1.2; SettingsStroke.Transparency = 0.8
 
     -- Glow Line
     local Line = Instance.new("Frame", Main)
@@ -125,6 +227,11 @@ function Library:CreateWindow(titleText)
     Line.BorderSizePixel = 0
     local LineGrad = Instance.new("UIGradient", Line)
     LineGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Theme.Bg), ColorSequenceKeypoint.new(0.5, Theme.Accent), ColorSequenceKeypoint.new(1, Theme.Bg)}
+    -- ВАЖНО: Регистрируем градиент линии как Accent (через пересоздание Gradient объекта)
+    -- Но так как LineGrad простой, мы зарегистрируем сам Line и будем менять его BackgroundColor3, но тут нужен Gradient.
+    -- Добавим LineGrad в специфический обработчик или просто оставим как есть, так как UIGradient сложнее менять через простой регистр.
+    -- Для простоты добавим ручное обновление для этого элемента в UpdateTheme
+    table.insert(Registry, {Object = LineGrad, ThemeType = "Gradient"})
 
     -- Containers
     local Sidebar = Instance.new("Frame", Main)
@@ -141,10 +248,122 @@ function Library:CreateWindow(titleText)
     Content.Position = UDim2.new(0, 135, 0, 50)
     Content.BackgroundTransparency = 1
 
+    -- [ SETTINGS UI ]
+    -- Специальный фрейм настроек, который перекрывает контент
+    local SettingsFrame = Instance.new("Frame", Main)
+    SettingsFrame.Name = "SettingsOverlay"
+    SettingsFrame.Size = UDim2.new(1, -20, 1, -60)
+    SettingsFrame.Position = UDim2.new(0, 10, 0, 50)
+    SettingsFrame.BackgroundColor3 = Theme.Bg
+    SettingsFrame.BackgroundTransparency = 0.1
+    SettingsFrame.Visible = false
+    SettingsFrame.ZIndex = 5
+    
+    local Blur = Instance.new("Frame", SettingsFrame) -- Fake Blur/Dimmer
+    Blur.Size = UDim2.new(1,0,1,0)
+    Blur.BackgroundColor3 = Theme.Bg
+    Blur.BackgroundTransparency = 0.2
+    
+    local SettingsTitle = Instance.new("TextLabel", SettingsFrame)
+    SettingsTitle.Text = "Choose Theme Color"
+    SettingsTitle.Size = UDim2.new(1, 0, 0, 30)
+    SettingsTitle.Font = Enum.Font.GothamBold
+    SettingsTitle.TextColor3 = Theme.Text
+    SettingsTitle.TextSize = 14
+    SettingsTitle.BackgroundTransparency = 1
+    SettingsTitle.ZIndex = 6
+
+    local ColorsGrid = Instance.new("Frame", SettingsFrame)
+    ColorsGrid.Size = UDim2.new(1, 0, 1, -40)
+    ColorsGrid.Position = UDim2.new(0, 0, 0, 40)
+    ColorsGrid.BackgroundTransparency = 1
+    ColorsGrid.ZIndex = 6
+    
+    local GridL = Instance.new("UIGridLayout", ColorsGrid)
+    GridL.CellSize = UDim2.new(0, 80, 0, 80)
+    GridL.CellPadding = UDim2.new(0, 10, 0, 10)
+    GridL.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    -- Presets
+    local Presets = {
+        {Name = "Aqua", Main = Color3.fromRGB(0, 255, 230), Sec = Color3.fromRGB(160, 100, 255)},
+        {Name = "Red", Main = Color3.fromRGB(255, 60, 60), Sec = Color3.fromRGB(255, 150, 50)},
+        {Name = "Green", Main = Color3.fromRGB(60, 255, 100), Sec = Color3.fromRGB(180, 255, 60)},
+        {Name = "Purple", Main = Color3.fromRGB(170, 0, 255), Sec = Color3.fromRGB(255, 0, 150)},
+        {Name = "Orange", Main = Color3.fromRGB(255, 140, 0), Sec = Color3.fromRGB(255, 220, 0)},
+        {Name = "Blue", Main = Color3.fromRGB(0, 120, 255), Sec = Color3.fromRGB(0, 200, 255)},
+    }
+
+    for _, p in ipairs(Presets) do
+        local CBtn = Instance.new("TextButton", ColorsGrid)
+        CBtn.Text = ""
+        CBtn.BackgroundColor3 = Theme.Element
+        Instance.new("UICorner", CBtn).CornerRadius = UDim.new(0, 8)
+        
+        local CPreview = Instance.new("Frame", CBtn)
+        CPreview.Size = UDim2.new(0, 40, 0, 40)
+        CPreview.Position = UDim2.new(0.5, -20, 0.5, -20)
+        CPreview.BorderSizePixel = 0
+        Instance.new("UICorner", CPreview).CornerRadius = UDim.new(1, 0)
+        
+        local CGrad = Instance.new("UIGradient", CPreview)
+        CGrad.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, p.Main),
+            ColorSequenceKeypoint.new(1, p.Sec)
+        }
+        CGrad.Rotation = 45
+        
+        local CName = Instance.new("TextLabel", CBtn)
+        CName.Text = p.Name
+        CName.Size = UDim2.new(1, 0, 0, 20)
+        CName.Position = UDim2.new(0, 0, 1, -20)
+        CName.BackgroundTransparency = 1
+        CName.TextColor3 = Theme.TextDim
+        CName.Font = Enum.Font.GothamBold
+        CName.TextSize = 10
+
+        CBtn.MouseButton1Click:Connect(function()
+            -- Применяем тему
+            Theme.Accent = p.Main
+            Theme.SecondaryAccent = p.Sec
+            UpdateTheme() -- Вызываем обновление всех элементов
+            
+            -- Анимация выбора
+            TweenService:Create(CPreview, TweenInfo.new(0.2), {Size = UDim2.new(0, 50, 0, 50)}):Play()
+            task.wait(0.2)
+            TweenService:Create(CPreview, TweenInfo.new(0.2), {Size = UDim2.new(0, 40, 0, 40)}):Play()
+        end)
+    end
+
+    -- Логика кнопки настроек
+    local settingsOpen = false
+    SettingsBtn.MouseButton1Click:Connect(function()
+        settingsOpen = not settingsOpen
+        SettingsFrame.Visible = settingsOpen
+        Content.Visible = not settingsOpen -- Скрываем контент
+        
+        if settingsOpen then
+            SettingsIcon.ImageColor3 = Theme.Accent
+            TweenService:Create(SettingsStroke, TweenInfo.new(0.3), {Color = Theme.Accent, Transparency = 0}):Play()
+            -- Крутим иконку
+            TweenService:Create(SettingsIcon, TweenInfo.new(0.5, Enum.EasingStyle.Back), {Rotation = 180}):Play()
+        else
+            SettingsIcon.ImageColor3 = Theme.TextDim
+            TweenService:Create(SettingsStroke, TweenInfo.new(0.3), {Color = Theme.TextDim, Transparency = 0.8}):Play()
+            TweenService:Create(SettingsIcon, TweenInfo.new(0.5), {Rotation = 0}):Play()
+        end
+    end)
+    -- Регистрируем иконку настроек для смены цвета (опционально, сейчас она TextDim, но при активе станет Accent)
+    
     -- Toggle GUI Keybind
     UserInputService.InputBegan:Connect(function(input, gp)
         if input.KeyCode == Enum.KeyCode.RightShift and not gp then
             Main.Visible = not Main.Visible
+            if Main.Visible then
+                -- Re-play open anim
+                Main.Size = UDim2.new(0,0,0,0)
+                TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 320)}):Play()
+            end
         end
     end)
 
@@ -158,6 +377,8 @@ function Library:CreateWindow(titleText)
         TabFrame.BackgroundTransparency = 1
         TabFrame.ScrollBarThickness = 2
         TabFrame.ScrollBarImageColor3 = Theme.Accent
+        RegisterObject(TabFrame, "ScrollBarImageColor3", "Accent") -- Регистрация скроллбара
+        
         TabFrame.Visible = false
         TabFrame.CanvasSize = UDim2.new(0,0,0,0)
         
@@ -186,6 +407,8 @@ function Library:CreateWindow(titleText)
         local BtnStroke = Instance.new("UIStroke", Btn); BtnStroke.Color = Theme.White; BtnStroke.Thickness = 1.5; BtnStroke.Transparency = 1
         local BtnGrad = Instance.new("UIGradient", BtnStroke)
         BtnGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Theme.Accent), ColorSequenceKeypoint.new(0.5, Theme.SecondaryAccent), ColorSequenceKeypoint.new(1, Theme.Accent)}
+        RegisterObject(BtnGrad, "Color", "Gradient") -- Регистрируем градиент кнопки
+        
         BtnGrad.Rotation = 45; BtnGrad.Enabled = false
         
         RunService.RenderStepped:Connect(function() if BtnGrad.Enabled then BtnGrad.Rotation = (tick() * 90) % 360 end end)
@@ -201,7 +424,13 @@ function Library:CreateWindow(titleText)
             end
             
             CurrentTab = {Btn = Btn, Frame = TabFrame, Stroke = BtnStroke, Label = BtnLabel, Grad = BtnGrad}
+            
+            -- Fade In Animation for Content
+            TabFrame.CanvasPosition = Vector2.new(0,0)
             TabFrame.Visible = true
+            TabFrame.GroupTransparency = 1
+            TweenService:Create(TabFrame, TweenInfo.new(0.3), {GroupTransparency = 0}):Play()
+
             TweenService:Create(Btn, TweenInfo.new(0.3), {BackgroundColor3 = Theme.TabActive, BackgroundTransparency = 0}):Play()
             TweenService:Create(BtnStroke, TweenInfo.new(0.3), {Transparency = 0}):Play()
             TweenService:Create(BtnLabel, TweenInfo.new(0.3), {TextColor3 = Theme.White}):Play()
@@ -209,9 +438,7 @@ function Library:CreateWindow(titleText)
         end
 
         Btn.MouseButton1Click:Connect(Activate)
-        
-        -- Auto select first tab
-        if #Sidebar:GetChildren() == 2 then Activate() end -- 2 because UIListLayout + UIPadding are children too? No, UIListLayout is 1. Wait, UIListLayout + Padding + This Button. 
+        if #Sidebar:GetChildren() == 2 then Activate() end 
 
         -- Hover Effects
         Btn.MouseEnter:Connect(function()
@@ -236,7 +463,8 @@ function Library:CreateWindow(titleText)
             Frame.BackgroundTransparency = 0.2
             Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
             local Stroke = Instance.new("UIStroke", Frame); Stroke.Color = Theme.Accent; Stroke.Thickness = 1; Stroke.Transparency = 0.85
-            
+            RegisterObject(Stroke, "Color", "Accent") -- Регистрируем обводку элемента
+
             -- Bind
             local BindBtn = Instance.new("TextButton", Frame)
             BindBtn.Size = UDim2.new(0, 40, 0, 22)
@@ -246,7 +474,8 @@ function Library:CreateWindow(titleText)
             BindBtn.Font = Enum.Font.GothamBold; BindBtn.TextColor3 = Theme.TextDim; BindBtn.TextSize = 10
             Instance.new("UICorner", BindBtn).CornerRadius = UDim.new(0, 6)
             local BindStroke = Instance.new("UIStroke", BindBtn); BindStroke.Color = Theme.Accent; BindStroke.Thickness = 1; BindStroke.Transparency = 0.7
-            
+            RegisterObject(BindStroke, "Color", "Accent")
+
             local BindIcon = Instance.new("ImageLabel", BindBtn)
             BindIcon.Size = UDim2.new(0,12,0,12); BindIcon.Position = UDim2.new(0.5,-6,0.5,-6)
             BindIcon.Image = "rbxassetid://6031094678"; BindIcon.ImageColor3 = Theme.TextDim; BindIcon.BackgroundTransparency = 1
@@ -263,6 +492,14 @@ function Library:CreateWindow(titleText)
             Switch.Size = UDim2.new(0, 36, 0, 20); Switch.Position = UDim2.new(1, -44, 0.5, -10)
             Switch.BackgroundColor3 = defaultState and Theme.Accent or Color3.fromRGB(40, 40, 45)
             Switch.Text = ""; Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+            
+            -- Регистрируем Switch, но его цвет зависит от состояния, так что сложно. 
+            -- Обойдемся простым перекрашиванием в функции UpdateToggle, 
+            -- так как она вызывается при клике.
+            -- Но если мы сменим тему, когда тоггл ВКЛЮЧЕН, он должен обновиться.
+            -- Добавим кастомную логику обновления в Registry? Сложно.
+            -- Проще: При смене темы принудительно вызовем UpdateToggle() если он true.
+            
             local Knob = Instance.new("Frame", Switch)
             Knob.Size = UDim2.new(0, 16, 0, 16); Knob.Position = defaultState and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
             Knob.BackgroundColor3 = Theme.White; Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
@@ -271,12 +508,20 @@ function Library:CreateWindow(titleText)
             local function UpdateToggle()
                 local tPos = toggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
                 local tCol = toggled and Theme.Accent or Color3.fromRGB(40, 40, 45)
-                TweenService:Create(Knob, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {Position = tPos}):Play()
+                TweenService:Create(Knob, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = tPos}):Play()
                 TweenService:Create(Switch, TweenInfo.new(0.2), {BackgroundColor3 = tCol}):Play()
                 TweenService:Create(Stroke, TweenInfo.new(0.3), {Transparency = toggled and 0.5 or 0.85, Color = toggled and Theme.Accent or Color3.fromRGB(60,60,60)}):Play()
                 if callback then callback(toggled) end
             end
             
+            -- Добавляем в реестр хак для обновления цвета активного тоггла при смене темы
+            table.insert(Registry, {Object = Switch, CustomUpdate = function()
+                if toggled then 
+                    Switch.BackgroundColor3 = Theme.Accent
+                    Stroke.Color = Theme.Accent
+                end
+            end})
+
             Switch.MouseButton1Click:Connect(function() toggled = not toggled; UpdateToggle() end)
 
             -- Bind Logic
@@ -291,7 +536,6 @@ function Library:CreateWindow(titleText)
                     BindBtn.Text = k; BindBtn.TextColor3 = Theme.TextDim
                     if bindCallback then bindCallback(k) end
                 end
-                -- Handle actual bind press
                 if not binding and input.KeyCode.Name == BindBtn.Text and not UserInputService:GetFocusedTextBox() then
                     toggled = not toggled; UpdateToggle()
                 end
@@ -306,6 +550,15 @@ function Library:CreateWindow(titleText)
     end
     
     return Window
+end
+
+-- Встраиваем хак обновления реестра для custom objects (как toggles)
+local OriginalUpdateTheme = UpdateTheme
+UpdateTheme = function()
+    OriginalUpdateTheme()
+    for _, data in ipairs(Registry) do
+        if data.CustomUpdate then data.CustomUpdate() end
+    end
 end
 
 return Library
