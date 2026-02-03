@@ -623,8 +623,8 @@ function Library:CreateWindow(titleText)
                 old.Frame.Visible = false
             end
             CurrentTab = {Btn = Btn, Frame = TabFrame, Stroke = BtnStroke, Label = BtnLabel, Grad = BtnGrad}
-            TabFrame.Visible = true; TabFrame.GroupTransparency = 1
-            TweenService:Create(TabFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {GroupTransparency = 0}):Play()
+            TabFrame.Visible = true
+            -- FIX: Removed GroupTransparency tween
             TweenService:Create(Btn, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundColor3 = Theme.TabActive, BackgroundTransparency = 0}):Play()
             TweenService:Create(BtnStroke, TweenInfo.new(0.3), {Transparency = 0}):Play()
             TweenService:Create(BtnLabel, TweenInfo.new(0.3), {TextColor3 = Theme.White}):Play()
