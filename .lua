@@ -26,7 +26,7 @@ local Theme = {
 
 local ConfigName = "NamelessHub_Config.json"
 local CurrentScale = 1.0
-local MenuBind = "RightShift" -- Default Keybind
+local MenuBind = "RightShift" 
 
 local function SaveSettings()
     if not writefile then return end
@@ -337,7 +337,6 @@ function Library:CreateWindow(titleText)
     Blur.BackgroundTransparency = 0.05
     Instance.new("UICorner", Blur).CornerRadius = UDim.new(0, 8)
     
-    -- [[ SCALE SECTION ]]
     local ScaleSection = Instance.new("Frame", SettingsFrame)
     ScaleSection.Size = UDim2.new(1, 0, 0, 40)
     ScaleSection.Position = UDim2.new(0, 0, 0, 0)
@@ -402,7 +401,6 @@ function Library:CreateWindow(titleText)
         end
     end)
 
-    -- [[ UI KEYBIND SECTION ]]
     local BindSection = Instance.new("Frame", SettingsFrame)
     BindSection.Size = UDim2.new(1, 0, 0, 40)
     BindSection.Position = UDim2.new(0, 0, 0, 55)
@@ -441,7 +439,6 @@ function Library:CreateWindow(titleText)
         KeybindStroke.Transparency = 0
     end)
 
-    -- [[ COLORS SECTION ]]
     local ColorsTitle = Instance.new("TextLabel", SettingsFrame)
     ColorsTitle.Text = "Theme Colors"
     ColorsTitle.Size = UDim2.new(1, 0, 0, 20)
@@ -543,7 +540,6 @@ function Library:CreateWindow(titleText)
     end})
 
     UserInputService.InputBegan:Connect(function(input, gp)
-        -- Handle Menu Binding Change
         if isBindingUI and input.UserInputType == Enum.UserInputType.Keyboard then
             isBindingUI = false
             MenuBind = input.KeyCode.Name
@@ -554,7 +550,6 @@ function Library:CreateWindow(titleText)
             return
         end
 
-        -- Toggle GUI
         if input.KeyCode.Name == MenuBind and not gp and not isBindingUI then
             Main.Visible = not Main.Visible
             if Main.Visible then
@@ -567,6 +562,7 @@ function Library:CreateWindow(titleText)
     local Window = {}
     local Tabs = {}
     local CurrentTab = nil
+    local FirstTabCreated = false
 
     function Window:CreateTab(name)
         local TabFrame = Instance.new("ScrollingFrame", Content)
@@ -574,6 +570,8 @@ function Library:CreateWindow(titleText)
         TabFrame.BackgroundTransparency = 1
         TabFrame.ScrollBarThickness = 2
         TabFrame.ScrollBarImageColor3 = Theme.Accent
+        TabFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        TabFrame.ScrollingDirection = Enum.ScrollingDirection.Y
         RegisterObject(TabFrame, "ScrollBarImageColor3", "Accent")
         
         TabFrame.Visible = false
@@ -581,8 +579,7 @@ function Library:CreateWindow(titleText)
         
         local ContentPad = Instance.new("UIPadding", TabFrame); ContentPad.PaddingTop = UDim.new(0, 5); ContentPad.PaddingBottom = UDim.new(0, 5); ContentPad.PaddingLeft = UDim.new(0, 2); ContentPad.PaddingRight = UDim.new(0, 4)
         local Layout = Instance.new("UIListLayout", TabFrame); Layout.Padding = UDim.new(0, 8); Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() TabFrame.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y + 10) end)
-
+        
         local Btn = Instance.new("TextButton", Sidebar)
         Btn.Size = UDim2.new(1, -5, 0, 34)
         Btn.BackgroundColor3 = Theme.TabInactive
@@ -627,7 +624,11 @@ function Library:CreateWindow(titleText)
         end
 
         Btn.MouseButton1Click:Connect(Activate)
-        if #Sidebar:GetChildren() == 2 then Activate() end 
+        
+        if not FirstTabCreated then
+            FirstTabCreated = true
+            Activate()
+        end
 
         Btn.MouseEnter:Connect(function()
             if CurrentTab and CurrentTab.Btn ~= Btn then
