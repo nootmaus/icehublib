@@ -271,14 +271,22 @@ function Library:CreateWindow(titleText)
     UpdateHLineColor()
     table.insert(Registry, {Object = Line, CustomUpdate = UpdateHLineColor})
 
-    local Sidebar = Instance.new("Frame", Main)
+    local Sidebar = Instance.new("ScrollingFrame", Main)
     Sidebar.Size = UDim2.new(0, 110, 1, -55)
     Sidebar.Position = UDim2.new(0, 10, 0, 50)
     Sidebar.BackgroundTransparency = 1
+    Sidebar.ScrollBarThickness = 0
+    Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Sidebar.CanvasSize = UDim2.new(0,0,0,0)
+    
     local SidebarLayout = Instance.new("UIListLayout", Sidebar)
     SidebarLayout.Padding = UDim.new(0, 8)
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    local SidebarPad = Instance.new("UIPadding", Sidebar); SidebarPad.PaddingTop = UDim.new(0, 5)
+    SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    
+    local SidebarPad = Instance.new("UIPadding", Sidebar)
+    SidebarPad.PaddingTop = UDim.new(0, 5)
+    SidebarPad.PaddingBottom = UDim.new(0, 5)
 
     local VLine = Instance.new("Frame", Main)
     VLine.Name = "VerticalLine"
